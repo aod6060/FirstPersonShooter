@@ -47,5 +47,7 @@ THE SOFTWARE.
 #include <btBulletDynamicsCommon.h>
 #include <GL/glew.h>
 // the projects libraries
+#include "window.h"
+
 
 #endif

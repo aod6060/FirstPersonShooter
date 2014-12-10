@@ -23,16 +23,25 @@ THE SOFTWARE.
 */
 
 
-#include "system.h"
+#include "game.h"
 
 
 int main(int argc, char** argv) {
 
-	std::cout << "Hello, from first person game" << std::endl;
+	Game game;
 
-	std::cout << "Please press a key..." << std::endl;
+	WindowConfig conf(
+		"First Person Shooter",
+		800,
+		600,
+		true,
+		&game);
 
-	std::getchar();
+	WindowManager::getInstance()->init(&conf);
+
+	WindowManager::getInstance()->mainLoop();
+
+	WindowManager::release();
 
 	return 0;
 }
