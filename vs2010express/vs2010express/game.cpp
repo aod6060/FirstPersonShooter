@@ -27,6 +27,35 @@ THE SOFTWARE.
 
 void Game::init() {
 
+	glEnable(GL_DEPTH_TEST);
+	this->shader.init("data/shaders/main.vert", "data/shaders/main.frag");
+
+	this->shader.bind();
+	this->shader.createUniform("Projection");
+	this->shader.createUniform("View");
+	this->shader.createUniform("Model");
+	this->shader.unbind();
+
+	float vlist[] = {
+		-1.0f, -1.0f, 0.0f,
+		0.0, 1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f
+	};
+
+	glGenVertexArrays(1, &this->vao);
+
+	glBindVertexArray(this->vao);
+
+	glGenBuffers(1, &this->vbo);
+
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vlist) * sizeof(float), vlist, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+
+	glBindVertexArray(0);
+
+	this->yrot = 0.0f;
 }
 	
 void Game::update() {
@@ -66,8 +95,47 @@ void Game::update() {
 	}
 
 
+	this->yrot += 1.0f / (1000 / 60);
+
+	if(yrot > 360.0f) {
+		this->yrot -= 360.0f;
+	}
+
+	glClearColor(0.5, 0.6, 1.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	shader.bind();
+
+	glm::mat4 p = glm::perspective(
+		glm::radians(45.0f), 
+		wm->getWidthf() / wm->getHeight(),
+		1.0f,
+		1000.0f);
+
+	glm::mat4 v = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f));
+
+	glm::mat4 m = glm::translate(glm::vec3(0.0f, 0.0f, -5.0f)) *
+				  glm::rotate(yrot, glm::vec3(0.0f, 1.0f, 0.0f));;
+
+
+	shader.setUniformMatrix4f("Projection", p);
+
+	shader.setUniformMatrix4f("View", v);
+
+	shader.setUniformMatrix4f("Model", m);
+
+
+	glBindVertexArray(this->vao);
+
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glBindVertexArray(0);
+
+	shader.unbind();
 }
 
 void Game::release() {
-
+	glDeleteBuffers(1, &vbo);
+	glDeleteVertexArrays(1, &vao);
+	this->shader.release();
 }

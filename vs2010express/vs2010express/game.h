@@ -30,6 +30,15 @@ THE SOFTWARE.
 
 
 class Game : public WindowCallback {
+	Shader shader;
+
+	GLuint vao;
+
+	GLuint vbo;
+
+	float yrot;
+public:
+
 	virtual void init();
 	
 	virtual void update();

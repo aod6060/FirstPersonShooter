@@ -38,6 +38,7 @@ THE SOFTWARE.
 #include <ctime>
 #include <cmath>
 // 3rd party libraries
+#define GLM_FORCE_RADIANS
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
@@ -48,6 +49,6 @@ THE SOFTWARE.
 #include <GL/glew.h>
 // the projects libraries
 #include "window.h"
-
+#include "graphics.h"
 
 #endif
