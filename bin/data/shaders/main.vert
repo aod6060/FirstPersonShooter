@@ -38,8 +38,15 @@ uniform mat4 Model;
 
 // Vertex Attribute
 layout(location = 0) in vec3 in_Vertex;
+// Normal Attribute
+layout(location = 1) in vec3 in_Normal;
+// TexCoord Attribute
+layout(location = 2) in vec2 in_TexCoord0;
 // More stuff to come
 
+out vec2 pass_TexCoord0;
+
 void main() {
+	pass_TexCoord0 = in_TexCoord0;
 	gl_Position = Projection * View * Model * vec4(in_Vertex, 1.0);
 }

@@ -36,6 +36,9 @@ class Game : public WindowCallback {
 
 	GLuint vbo;
 
+	StaticMesh test;
+	Texture testTex;
+
 	float yrot;
 public:
 

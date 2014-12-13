@@ -20,7 +20,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-
 */
 
 #include "game.h"
@@ -34,26 +33,13 @@ void Game::init() {
 	this->shader.createUniform("Projection");
 	this->shader.createUniform("View");
 	this->shader.createUniform("Model");
+	this->shader.createUniform("tex0");
+	this->shader.setUniform1i("tex0", 0);
 	this->shader.unbind();
 
-	float vlist[] = {
-		-1.0f, -1.0f, 0.0f,
-		0.0, 1.0f, 0.0f,
-		1.0f, -1.0f, 0.0f
-	};
+	this->test.init("data/mesh/cube.smesh");
 
-	glGenVertexArrays(1, &this->vao);
-
-	glBindVertexArray(this->vao);
-
-	glGenBuffers(1, &this->vbo);
-
-	glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vlist) * sizeof(float), vlist, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
-
-	glBindVertexArray(0);
+	this->testTex.init("data/texture/grass0.png");
 
 	this->yrot = 0.0f;
 }
@@ -115,7 +101,7 @@ void Game::update() {
 	glm::mat4 v = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	glm::mat4 m = glm::translate(glm::vec3(0.0f, 0.0f, -5.0f)) *
-				  glm::rotate(yrot, glm::vec3(0.0f, 1.0f, 0.0f));;
+				  glm::rotate(yrot, glm::vec3(1.0f, 1.0f, 1.0f));
 
 
 	shader.setUniformMatrix4f("Projection", p);
@@ -124,18 +110,17 @@ void Game::update() {
 
 	shader.setUniformMatrix4f("Model", m);
 
+	testTex.bind();
 
-	glBindVertexArray(this->vao);
+	this->test.render();
 
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-
-	glBindVertexArray(0);
+	testTex.unbind();
 
 	shader.unbind();
 }
 
 void Game::release() {
-	glDeleteBuffers(1, &vbo);
-	glDeleteVertexArrays(1, &vao);
+	testTex.release();
+	test.release();
 	this->shader.release();
 }

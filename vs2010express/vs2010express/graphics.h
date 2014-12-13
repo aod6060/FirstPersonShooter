@@ -28,6 +28,24 @@ THE SOFTWARE.
 
 
 /*
+	Triangle
+*/
+struct Triangle {
+	int v1;
+	int v2;
+	int v3;
+};
+
+/*
+	BiTriangle
+*/
+struct BiTriangle {
+	Triangle t1;
+	Triangle t2;
+};
+/*
+	Shader
+
 	This is a the basic shader class 
 	for this project. I'm going to 
 	implement a better one later.
@@ -98,6 +116,68 @@ public:
 	
 	// This sets a uniform 4 dimensional matrix
 	void setUniformMatrix4f(std::string name, const glm::mat4& m);
+};
+
+/*
+	StaticMesh
+
+	This is a simple static mesh loader. It loads a custom
+	format that is specified in the script folder. The reason
+	I'm using a custom format is to change it up for the game
+	This will also be appied to the animated format when
+	I derive it.
+*/
+class StaticMesh {
+	GLuint vao;
+	GLuint vbo[3];
+
+	GLuint size;
+
+	int version;
+
+	enum StaticMeshSections {
+		NONE = 0,
+		TRANSFORM,
+		VERTEX,
+		NORMAL,
+		TEXCOORD,
+		FACE
+	};
+
+public:
+
+	StaticMesh();
+
+	void init(std::string fn);
+
+	void render();
+
+	void release();
+
+	int getVersion();
+
+};
+
+/*
+	Texture
+
+	This is a simple 2D texture wrapper
+*/
+class Texture {
+	GLuint id;
+	GLuint width, height;
+
+public:
+
+	Texture();
+
+	void init(std::string fn);
+
+	void bind(int tt = GL_TEXTURE0);
+
+	void unbind();
+
+	void release();
 };
 
 #endif

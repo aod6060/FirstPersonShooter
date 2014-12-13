@@ -29,10 +29,15 @@ THE SOFTWARE.
 */
 
 #version 330 core
+// Sampler main sampler for project
+uniform sampler2D tex0;
+
 // output color to framebuffer
 out vec4 out_Color;
+
+in vec2 pass_TexCoord0;
  
 void main() {
 	// Setting to just white output for now
-	out_Color = vec4(1.0, 1.0, 1.0, 1.0);
+	out_Color = texture(tex0, pass_TexCoord0);
 }

@@ -1,0 +1,23 @@
+This is the animated mesh format for the game. This format is used stuff
+that doesn't need to be animated such as rocks, trees, billboards, solid 
+equipment, boxes, or what not. Below is the specification for the format.
+
+
+version [int]
+transform
+[mat4]
+end
+vertex
+[vec3]*
+end
+normal
+[vec3]*
+end
+texCoord
+[vec2]*
+end
+face
+[int6]*
+end
+
+This file will contain a blender export script.
