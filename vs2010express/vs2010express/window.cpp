@@ -36,6 +36,8 @@ void WindowManager::_release() {
 		}
 		this->conf = 0;
 	}
+	
+	TTF_Quit();
 	SDL_GL_DeleteContext(this->context);
 	SDL_DestroyWindow(this->window);
 	SDL_Quit();
@@ -87,6 +89,7 @@ void WindowManager::init(WindowConfig* conf) {
 	// Init other subsystems
 	this->initKeyboard();
 	this->initMouse();
+	TTF_Init();
 
 	glewInit();
 

@@ -46,6 +46,7 @@
     <OutDir>..\..\bin</OutDir>
     <IncludePath>..\..\include;$(IncludePath)</IncludePath>
     <LibraryPath>..\..\lib;$(LibraryPath)</LibraryPath>
+    <TargetName>run</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

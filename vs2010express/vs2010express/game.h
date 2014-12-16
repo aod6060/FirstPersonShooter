@@ -31,13 +31,17 @@ THE SOFTWARE.
 
 class Game : public WindowCallback {
 	Shader shader;
+	Shader ui;
 
-	GLuint vao;
+	Font font;
 
-	GLuint vbo;
+	Terrain terrain;
+
+	Camera cam;
 
 	StaticMesh test;
 	Texture testTex;
+	Texture testTex2;
 
 	float yrot;
 public:

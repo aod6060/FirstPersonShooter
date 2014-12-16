@@ -43,6 +43,20 @@ struct BiTriangle {
 	Triangle t1;
 	Triangle t2;
 };
+
+/*
+	Normal
+*/
+struct Normal {
+	glm::vec3 vnormal;
+	std::vector<glm::vec3> fnorml;
+
+	void addFaceNoraml(glm::vec3 fn);
+
+	void generate();
+
+};
+
 /*
 	Shader
 
@@ -178,6 +192,109 @@ public:
 	void unbind();
 
 	void release();
+};
+
+/*
+	Font
+
+	This is the font class.
+*/
+class Font {
+	GLuint id;
+	GLuint width, height;
+	GLuint vao;
+	GLuint vbo[2];
+
+	glm::vec2 position;
+	glm::vec2 size;
+
+	std::string str;
+
+	TTF_Font* font;
+
+	void _updateBuffer(std::string str);
+public:
+
+	Font();
+
+	void init();
+
+	void renderString(const char* format, ...);
+
+	void release();
+
+	int getWidth();
+
+	int getHeight();
+
+};
+
+/*
+	Terrain
+
+	This is the terrain render class
+*/
+class Terrain {
+	std::vector<Uint8> heights;
+
+	Uint32 width;
+	Uint32 height;
+
+
+	GLuint vao;
+
+	GLuint vbo[3];
+	GLuint ibo;
+
+	Uint32 count;
+
+public:
+
+	Terrain();
+
+	void init(std::string fn);
+
+	void render();
+
+	void release();
+};
+
+/*
+	Camera
+
+	This is a basic camera that will be used for the project
+*/
+
+class Camera {
+	glm::vec3 pos;
+	glm::vec2 rot;
+
+	glm::mat4 view;
+	glm::mat4 proj;
+
+
+public:
+
+	Camera();
+
+	void init(glm::vec3 pos, glm::vec2 rot, float fov, float znear, float zfar);
+
+	void render();
+
+	void update();
+
+	void getViewMatrix(glm::mat4& v);
+
+	void getProjectionMatrix(glm::mat4& p);
+
+	glm::vec3 getPos();
+
+	glm::vec2 getRot();
+
+	void setPos(glm::vec3 p);
+
+	void setRot(glm::vec2 r);
+
 };
 
 #endif

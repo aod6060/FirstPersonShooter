@@ -37,6 +37,7 @@ THE SOFTWARE.
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
+#include <cstdarg>
 // 3rd party libraries
 #define GLM_FORCE_RADIANS
 #include <SDL.h>
