@@ -25,7 +25,7 @@ THE SOFTWARE.
 import bpy
 
 bl_info = {
-    "name": "Static Mesh Format",
+    "name": "Static Mesh Format V6",
     "author": "Fred R. Cook",
     "blender": (2, 59, 0),
     "location": "File > Import-Export",
@@ -36,14 +36,14 @@ bl_info = {
     "support": 'TESTING',
     "category": "Import-Export"}
     
-version = 1
+version = 6
 def write_some_data(context, filepath, use_some_setting):
     # Object
     obj = bpy.context.active_object
     # Check to see if the object is a mesh
     if obj.type != "MESH":
         print("Not a Mesh\n")
-        return {'FINISHED'}
+        return {'CANCELLED'}
     oldmode = obj.mode
     
     #change mode to edit
@@ -104,6 +104,7 @@ def write_some_data(context, filepath, use_some_setting):
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.mesh.tris_convert_to_quads()
+    bpy.ops.object.mode_set(mode="OBJECT")
     
     return {'FINISHED'}
 

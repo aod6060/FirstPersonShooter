@@ -96,7 +96,9 @@ void Shader::release() {
 // This creates a link to a uniform variable
 // located in the shader
 void Shader::createUniform(std::string name) {
-	this->uniforms[name] = glGetUniformLocation(this->pid, name.c_str());
+	int value = glGetUniformLocation(this->pid, name.c_str());
+	std::cout << "Uniform ID: " << value << " Name: " << name << std::endl;
+	this->uniforms[name] = value;
 }
 
 // This sets a single uniform integer
@@ -176,8 +178,6 @@ void StaticMesh::init(std::string fn) {
 
 	StaticMesh::StaticMeshSections sms = StaticMesh::NONE;
 
-	std::cout << "Hello 1" << std::endl;
-
 	while(std::getline(in, temp)) {
 		std::stringstream ss(temp);
 		std::stringstream ss2(temp);
@@ -236,7 +236,6 @@ void StaticMesh::init(std::string fn) {
 			glm::vec2 tt;
 			ss2 >> tt.x;
 			ss2 >> tt.y;
-			std::cout << "What" << std::endl;
 
 			t.push_back(tt);
 		} else if(sms == StaticMesh::FACE) {
@@ -253,7 +252,7 @@ void StaticMesh::init(std::string fn) {
 		}
 	}
 
-	std::cout << "Hello 2" << std::endl;
+	std::cout << "Mesh Version is " << this->version << std::endl;
 	glm::mat4 mat(
 		tran[0],
 		tran[1],
@@ -263,7 +262,7 @@ void StaticMesh::init(std::string fn) {
 
 	glm::mat4 imat = glm::transpose(glm::inverse(mat));
 
-	glm::mat3 imat3x3 = glm::make_mat3(&imat[0][0]);
+	//glm::mat3 imat3x3 = glm::make_mat3(&imat[0][0]);
 
 
 	for(int i = 0; i < v.size(); i++) {
@@ -272,36 +271,32 @@ void StaticMesh::init(std::string fn) {
 		tv = mat * tv;
 
 		v[i] = glm::vec3(tv.x, tv.y, tv.z);
+		
 
-		n[i] = imat3x3 * n[i];
+		glm::vec4 tn(n[i], 0.0);
+
+		tn = imat * tn;
+
+		n[i] = glm::vec3(tn.x, tn.y, tn.z);
 	}
 
-	std::cout << "Hello 4" << std::endl;
+
 	std::vector<glm::vec3> vlist;
 	std::vector<glm::vec3> nlist;
 	std::vector<glm::vec2> tlist;
 
 	for(int i = 0; i < bt.size(); i++) {
-		std::cout << "vertex" << i << std::endl;
 		vlist.push_back(v[bt[i].t1.v1]);
 		vlist.push_back(v[bt[i].t1.v2]);
 		vlist.push_back(v[bt[i].t1.v3]);
-		std::cout << "normal" << i << std::endl;
-		nlist.push_back(n[bt[i].t1.v1]);
-		nlist.push_back(n[bt[i].t1.v2]);
-		nlist.push_back(n[bt[i].t1.v3]);
-		std::cout << "texCoord" << i << std::endl;
-		std::cout << t.size() << std::endl;
-
-		std::cout << bt[i].t2.v1 << ", " << bt[i].t2.v2 << ", " << bt[i].t2.v3 << std::endl;
-
+		nlist.push_back(-n[bt[i].t1.v1]);
+		nlist.push_back(-n[bt[i].t1.v2]);
+		nlist.push_back(-n[bt[i].t1.v3]);
 		tlist.push_back(t[bt[i].t2.v1]);
 		tlist.push_back(t[bt[i].t2.v2]);
 		tlist.push_back(t[bt[i].t2.v3]);
-		std::cout << "end" << i << std::endl;
 	}
 
-	std::cout << "Hello 5" << std::endl;
 	this->size = vlist.size();
 
 	glGenVertexArrays(1, &this->vao);
@@ -330,8 +325,6 @@ void StaticMesh::init(std::string fn) {
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
-
-	std::cout << "Hello 6" << std::endl;
 }
 
 void StaticMesh::render() {
@@ -341,7 +334,7 @@ void StaticMesh::render() {
 }
 
 void StaticMesh::release() {
-	glDeleteBuffers(3, this->vbo);
+	glDeleteBuffers(4, this->vbo);
 	glDeleteVertexArrays(1, &this->vao);
 }
 
@@ -349,6 +342,34 @@ int StaticMesh::getVersion() {
 	return this->version;
 }
 
+void AnimatedMesh::updateVertexArray() {
+
+}
+
+AnimatedMesh::AnimatedMesh() {
+	this->vao = 0;
+	this->size = 0;
+}
+
+void AnimatedMesh::init(std::string fn) {
+
+}
+
+void AnimatedMesh::render() {
+
+	this->updateVertexArray();
+
+
+}
+
+void AnimatedMesh::release() {
+	glDeleteBuffers(3, this->vbo);
+	glDeleteVertexArrays(1, &this->vao);
+}
+
+int AnimatedMesh::getVersion() {
+	return this->version;
+}
 
 Texture::Texture() {
 	this->id = 0;
@@ -609,6 +630,7 @@ void Terrain::init(std::string fn) {
 
 			v[y * height + x] = tempv;
 			t[y * height + x] = tempt;
+
 		}
 	}
 
@@ -629,10 +651,53 @@ void Terrain::init(std::string fn) {
 			tris.push_back(t2);
 		}
 	}
+	/*
+	for(int y = 0; y < this->height - 1; y++) {
+		for(int x = 0; x < this->width - 1; x++) {
+			glm::vec3 off = glm::vec3(1.0, 0.0, 1.0);
+			float hl, hr, hd, hu;
 
+			if(y * this->width + (x - 1) >= 0) {
+				hl = v[y * this->width + (x - 1)].y;
+			} else {
+				hl = 1.0f;
+			}
+
+			if(y * this->width + (x + 1) < this->width) {
+				hr = v[y * this->width + (x + 1)].y;
+			} else {
+				hr = 0.0f;
+			}
+
+			if((y - 1) * this->width + x >= 0) {
+				hd = v[(y - 1) * this->width + x].y;
+			} else {
+				hd = 1.0f;
+			}
+
+			if((y + 1) * this->width + x < this->height) {
+				hu = v[(y + 1) * this->width + x].y;
+			} else {
+				hu = 0.0f;
+			}
+
+			glm::vec3 N;
+
+			N.x = hl - hr;
+			N.z = hd - hu;
+			N.y = 2.0f;
+
+			N = glm::normalize(N);
+
+			n2[y * this->width + x] = -N;
+		}
+	}
+	*/
 	this->count = tris.size() * 3;
 
+	
 	for(int i = 0; i < tris.size(); i++) {
+		
 		glm::vec3 U;
 		glm::vec3 V;
 
@@ -655,6 +720,7 @@ void Terrain::init(std::string fn) {
 		n[i].generate();
 		n2[i] = n[i].vnormal;
 	}
+	
 
 	glGenVertexArrays(1, &this->vao);
 
@@ -799,4 +865,198 @@ void Camera::setPos(glm::vec3 p) {
 
 void Camera::setRot(glm::vec2 r) {
 	this->rot = r;
+}
+
+// Renderer
+
+Renderer* Renderer::instance = 0;
+
+void Renderer::_release() {
+	scene.release();
+	ui.release();
+}
+
+Renderer* Renderer::getInstance() {
+
+	if(Renderer::instance == 0) {
+		Renderer::instance = new Renderer();
+	}
+
+	return Renderer::instance;
+}
+
+void Renderer::release() {
+	Renderer::instance->_release();
+	delete Renderer::instance;
+	Renderer::instance = 0;
+}
+
+void Renderer::init() {
+	// GL Enables
+	glEnable(GL_DEPTH_TEST);
+
+	// Init Shaders
+
+	// Create Scene Shader
+	scene.init("data/shaders/main.vert", "data/shaders/main.frag");
+	scene.bind();
+	scene.createUniform("Projection");
+	scene.createUniform("View");
+	scene.createUniform("Model");
+	scene.createUniform("Normal");
+	scene.createUniform("TextureMatrix");
+	glm::mat4 tm = glm::scale(glm::vec3(-1.0f, 1.0f, 1.0f)) * glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	scene.setUniformMatrix4f("TextureMatrix", tm);
+	scene.createUniform("CameraPosition");
+	scene.createUniform("tex0");
+	scene.setUniform1i("tex0", 0);
+	// This is the lighting section
+	/*
+	scene.createUniform("light0.enabled");
+	scene.setUniform1i("light0.enabled", 0);
+	scene.createUniform("light0.type");
+	scene.setUniform1i("light0.type", 0);
+	scene.createUniform("light0.position");
+	scene.createUniform("light0.diffuse");
+	scene.createUniform("light0.specular");
+	*/
+	for(int i = 0; i < Renderer::LIGHT_SIZE; i++) {
+		this->createLight(i);
+	}
+	scene.unbind();
+
+	// Create UI Shader
+	ui.init("data/shaders/ui.vert", "data/shaders/ui.frag");
+	ui.bind();
+	ui.createUniform("Projection");
+	ui.createUniform("View");
+	ui.createUniform("Model");
+	ui.createUniform("tex0");
+	ui.setUniform1i("tex0", 0);
+	ui.unbind();
+
+	this->shaderType = Renderer::SCENE;
+}
+
+void Renderer::startShader(ShaderTypes s) {
+	this->shaderType = s;
+	if(this->shaderType == Renderer::SCENE) {
+		scene.bind();
+	} else if(this->shaderType == Renderer::UI) {
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		ui.bind();
+	}
+}
+
+void Renderer::endShader(ShaderTypes s) {
+	this->shaderType = s;
+	if(this->shaderType == Renderer::SCENE) {
+		scene.unbind();
+	} else if(this->shaderType == Renderer::UI) {
+		ui.unbind();
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+	}
+}
+
+void Renderer::setProjection(const glm::mat4& p) {
+	if(this->shaderType == Renderer::SCENE) {
+		scene.setUniformMatrix4f("Projection", p);
+	} else if(this->shaderType == Renderer::UI) {
+		ui.setUniformMatrix4f("Projection", p);
+	}
+}
+
+void Renderer::setView(const glm::mat4& p) {
+	if(this->shaderType == Renderer::SCENE) {
+		scene.setUniformMatrix4f("View", p);
+	} else if(this->shaderType == Renderer::UI) {
+		ui.setUniformMatrix4f("View", p);
+	}
+}
+
+void Renderer::setModel(const glm::mat4& w) {
+	if(this->shaderType == Renderer::SCENE) {
+		glm::mat4 n = glm::transpose(glm::inverse(w));
+		scene.setUniformMatrix4f("Model", w);
+		scene.setUniformMatrix4f("Normal", n);
+	} else if(this->shaderType == Renderer::UI) {
+		ui.setUniformMatrix4f("Model", w);
+	}
+}
+
+void Renderer::setCamera(Camera& cam) {
+	if(this->shaderType == Renderer::SCENE) {
+		glm::mat4 p, v;
+
+		glm::vec3 pos;
+
+		cam.render();
+
+		pos = cam.getPos();
+
+		cam.getProjectionMatrix(p);
+
+		cam.getViewMatrix(v);
+
+		scene.setUniformMatrix4f("Projection", p);
+
+		scene.setUniformMatrix4f("View", v);
+
+		scene.setUniform3f("CameraPosition", pos);
+	} // UI doesn't make any since
+}
+
+void Renderer::setLight(Renderer::Lights light, Light& l) {
+	if(this->shaderType == Renderer::SCENE) {
+		std::stringstream ss;
+		std::stringstream ss2;
+
+		ss << "lights[" << light << "]";
+
+		ss2 << ss.str() << ".enabled";
+		scene.setUniform1i(ss2.str(), l.enabled);
+		ss2.str(std::string());
+		ss2 << ss.str() << ".type";
+		scene.setUniform1i(ss2.str(), l.type);
+		ss2.str(std::string());
+		ss2 << ss.str() << ".position";
+		scene.setUniform3f(ss2.str(), l.position);
+		ss2.str(std::string());
+		ss2 << ss.str() << ".diffuse";
+		scene.setUniform3f(ss2.str(), l.diffuse);
+		ss2.str(std::string());
+		ss2 << ss.str() << ".specular";
+		scene.setUniform3f(ss2.str(), l.specular);
+		ss2.str(std::string());
+		ss2 << ss.str() << ".range";
+		scene.setUniform1f(ss2.str(), l.range);
+	}
+}
+
+void Renderer::createLight(int i) {
+	std::stringstream ss;
+	ss << "lights[" << i << "]";
+	std::stringstream ss2;
+	ss2 << ss.str() << ".enabled";
+	scene.createUniform(ss2.str());
+	scene.setUniform1i(ss2.str(), 0);
+	ss2.str(std::string());
+	ss2 << ss.str() << ".type";
+	scene.createUniform(ss2.str());
+	scene.setUniform1i(ss2.str(), 0);
+	ss2.str(std::string());
+	ss2 << ss.str() << ".position";
+	scene.createUniform(ss2.str());
+	ss2.str(std::string());
+	ss2 << ss.str() << ".diffuse";
+	scene.createUniform(ss2.str());
+	ss2.str(std::string());
+	ss2 << ss.str() << ".specular";
+	scene.createUniform(ss2.str());
+	ss2.str(std::string());
+	ss2 << ss.str() << ".range";
+	scene.createUniform(ss2.str());
 }

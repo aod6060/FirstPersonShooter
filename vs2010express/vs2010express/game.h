@@ -30,9 +30,6 @@ THE SOFTWARE.
 
 
 class Game : public WindowCallback {
-	Shader shader;
-	Shader ui;
-
 	Font font;
 
 	Terrain terrain;
@@ -40,8 +37,18 @@ class Game : public WindowCallback {
 	Camera cam;
 
 	StaticMesh test;
+	StaticMesh sphere;
+	StaticMesh player;
+
 	Texture testTex;
 	Texture testTex2;
+	Texture playerTex;
+	Texture testTex3;
+
+	Light light0;
+	Light light1;
+	Light light2;
+	Light light3;
 
 	float yrot;
 public:

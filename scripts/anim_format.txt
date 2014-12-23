@@ -1,0 +1,27 @@
+This is the file spec for .amesh and .anim files. The .amesh files contains the 
+vertex, normal, bones, and texCoord information. The .anim file will contain
+the animation information. Lets try to derive a new format. Here is the .amesh
+format format
+
+version [int(version_number)]
+bone
+[int(id)] [string(name)] [int(parent)]+
+end
+transform
+[mat4]
+end
+vertex
+[int(boneID)] [vec3(vertex)] [vec3(normal)]+
+end
+texCoord
+[vec2]+
+end
+face
+[int3(vertex_indencies)] [int3(texCoord_indencies)]+
+end
+
+Here is the .anim format spec.
+version [int(version_num)]
+frame [int(frame_num)]+
+bone [int(id)] [mat4(transform)]+
+end

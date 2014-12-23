@@ -36,14 +36,14 @@ bl_info = {
     "support": 'TESTING',
     "category": "Import-Export"}
     
-version = 1
+version = 2
 def write_some_data(context, filepath, use_some_setting):
     # Object
     obj = bpy.context.active_object
     # Check to see if the object is a mesh
     if obj.type != "MESH":
         print("Not a Mesh\n")
-        return {'FINISHED'}
+        return {'CANCELLED'}
     oldmode = obj.mode
     
     #change mode to edit

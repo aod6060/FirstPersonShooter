@@ -58,6 +58,18 @@ struct Normal {
 };
 
 /*
+	Light
+*/
+struct Light {
+	int enabled;
+	int type;
+	glm::vec3 position;
+	glm::vec3 diffuse;
+	glm::vec3 specular;
+	float range;
+};
+
+/*
 	Shader
 
 	This is a the basic shader class 
@@ -161,6 +173,58 @@ class StaticMesh {
 public:
 
 	StaticMesh();
+
+	void init(std::string fn);
+
+	void render();
+
+	void release();
+
+	int getVersion();
+
+};
+
+class AnimatedMesh {
+	GLuint vao;
+	GLuint vbo[4];
+
+	GLuint size;
+
+	int version;
+
+	struct AnimatedMeshBone {
+		int id;
+		std::string name;
+	};
+
+	// This is for bones (note: I'm not real sure what I need this for)
+	std::vector<AnimatedMesh::AnimatedMeshBone> bones;
+
+	// Vertex Section
+	std::vector<int> boneIDs; // This is for the animation part
+	std::vector<glm::vec3> vertex; // This is the default vertices
+	std::vector<glm::vec3> normals; // This is the default normals
+
+	// TexCoord Section
+	std::vector<glm::vec2> texCoords;
+
+	// Face
+	std::vector<BiTriangle> btris;
+
+	enum AnimatedMeshSection {
+		NONE = 0,
+		BONE,
+		TRANSFORM,
+		VERTEX,
+		TEXCOORD,
+		FACE
+	};
+
+
+	void updateVertexArray();
+public:
+
+	AnimatedMesh();
 
 	void init(std::string fn);
 
@@ -294,6 +358,83 @@ public:
 	void setPos(glm::vec3 p);
 
 	void setRot(glm::vec2 r);
+
+};
+
+/*
+	This is the renderer for the game engine.
+
+	This pretty much wrapps the shader code for
+
+	the project.
+*/
+class Renderer {
+	static Renderer* instance;
+
+	Shader scene;
+	Shader ui;
+
+	Renderer() {}
+	Renderer(Renderer&) {}
+	Renderer& operator = (Renderer&) {}
+
+	void _release();
+public:
+	/*
+		This is for choosing which shader
+		to use
+	*/
+	enum ShaderTypes {
+		SCENE = 0,
+		UI
+	};
+
+	enum LightType {
+		DIRECTION = 0,
+		POINT,
+		SPOT
+	};
+
+	enum Lights {
+		LIGHT0 = 0,
+		LIGHT1,
+		LIGHT2,
+		LIGHT3,
+		LIGHT4,
+		LIGHT5,
+		LIGHT6,
+		LIGHT7,
+		LIGHT_SIZE
+	};
+
+private:
+	ShaderTypes shaderType;
+	Lights lights;
+
+	void createLight(int i);
+
+public:
+
+
+	static Renderer* getInstance();
+
+	static void release();
+
+	void init();
+
+	void startShader(ShaderTypes s);
+
+	void endShader(ShaderTypes s);
+
+	void setProjection(const glm::mat4& p);
+
+	void setView(const glm::mat4& p);
+
+	void setModel(const glm::mat4& w);
+
+	void setCamera(Camera& cam);
+
+	void setLight(Renderer::Lights lights, Light& l);
 
 };
 

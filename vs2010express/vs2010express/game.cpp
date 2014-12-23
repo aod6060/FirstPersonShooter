@@ -25,35 +25,21 @@ THE SOFTWARE.
 #include "game.h"
 
 void Game::init() {
-
-	glEnable(GL_DEPTH_TEST);
-	this->shader.init("data/shaders/main.vert", "data/shaders/main.frag");
-
-	this->shader.bind();
-	this->shader.createUniform("Projection");
-	this->shader.createUniform("View");
-	this->shader.createUniform("Model");
-	this->shader.createUniform("tex0");
-	this->shader.setUniform1i("tex0", 0);
-	this->shader.unbind();
-
-	this->ui.init("data/shaders/ui.vert", "data/shaders/ui.frag");
-
-	this->ui.bind();
-	this->ui.createUniform("Projection");
-	this->ui.createUniform("View");
-	this->ui.createUniform("Model");
-	this->ui.createUniform("tex0");
-	this->ui.setUniform1i("tex0", 0);
-	this->ui.unbind();
+	// Init Renderer
+	Renderer::getInstance()->init();
 
 	this->font.init();
 
 
 	this->test.init("data/mesh/cube.smesh");
+	player.init("data/mesh/player.smesh");
 
 	this->testTex.init("data/texture/grass0.png");
 	testTex2.init("data/texture/grass1.png");
+	playerTex.init("data/texture/player.png");
+	
+	this->sphere.init("data/mesh/sphere.smesh");
+	testTex3.init("data/texture/dirt0.png");
 
 	this->terrain.init("data/heightmap/heightmap1.png");
 
@@ -66,11 +52,41 @@ void Game::init() {
 
 
 	this->yrot = 0.0f;
+
+
+	light0.enabled = 1;
+	light0.type = Renderer::DIRECTION;
+	light0.position = glm::vec3(-0.5, -0.5, 0.0);
+	light0.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+	light0.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+
+	light1.enabled = 1;
+	light1.type = Renderer::POINT;
+	light1.position = glm::vec3(3.0f, 10.0f, 20.0f);
+	light1.diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
+	light1.specular = glm::vec3(1.0f, 0.0f, 0.0f);
+	light1.range = 64.0f;
+
+	light2.enabled = 1;
+	light2.type = Renderer::POINT;
+	light2.position = glm::vec3(-3.0f, 10.0f, 20.0f);
+	light2.diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
+	light2.specular = glm::vec3(0.0f, 1.0f, 0.0f);
+	light2.range = 64.0f;
+
+	light3.enabled = 1;
+	light3.type = Renderer::POINT;
+	light3.diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
+	light3.specular = glm::vec3(0.0f, 0.0f, 1.0f);
+	light3.range = 64.0f;
 }
 	
 void Game::update() {
 
 	WindowManager* wm = WindowManager::getInstance();
+	Renderer* rend = Renderer::getInstance();
+
+	glm::mat4 p, v, m;
 
 	if(wm->keyHit(SDL_SCANCODE_ESCAPE)) {
 		wm->quit();
@@ -95,38 +111,23 @@ void Game::update() {
 	glClearColor(0.5, 0.6, 1.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	shader.bind();
+	rend->startShader(Renderer::SCENE);
 
-	/*
-	glm::mat4 p = glm::perspective(
-		glm::radians(45.0f), 
-		wm->getWidthf() / wm->getHeight(),
-		1.0f,
-		1000.0f);
+	rend->setCamera(cam);
 
-	glm::mat4 v = glm::rotate(glm::radians(yrot), glm::vec3(0.0f, 1.0f, 0.0f)) *
-		          glm::translate(glm::vec3(0.0f, -2.0f, 0.0f));
-	*/
+	this->light3.position = cam.getPos();
 
-	glm::mat4 p, v;
+	rend->setLight(Renderer::LIGHT0, this->light0);
+	rend->setLight(Renderer::LIGHT1, this->light1);
+	rend->setLight(Renderer::LIGHT2, this->light2);
+	rend->setLight(Renderer::LIGHT3, this->light3);
 
-	cam.render();
-
-	cam.getViewMatrix(v);
-	cam.getProjectionMatrix(p);
-
-	glm::mat4 m = glm::translate(glm::vec3(0.0f, 2.0f, -5.0f)) *
+	m = glm::translate(glm::vec3(0.0f, 2.0f, -5.0f)) *
 				  glm::rotate(yrot, glm::vec3(1.0f, 1.0f, 1.0f));
 
-
-	shader.setUniformMatrix4f("Projection", p);
-
-	shader.setUniformMatrix4f("View", v);
-
-	shader.setUniformMatrix4f("Model", m);
+	rend->setModel(m);
 
 	testTex.bind();
-
 
 	this->test.render();
 
@@ -134,48 +135,60 @@ void Game::update() {
 
 	m = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f));
 
-	shader.setUniformMatrix4f("Model", m);
+	rend->setModel(m);
 
 	testTex2.bind();
 
 	this->terrain.render();
 
+	m = glm::translate(glm::vec3(0.0f, 0.0f, 5.0f));
+
+	rend->setModel(m);
+
 	testTex2.unbind();
 
-	shader.unbind();
+	playerTex.bind();
 
+	this->player.render();
 
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	playerTex.unbind();
 
+	m = glm::translate(glm::vec3(20.0f, 0.0f, 20.0f));
 
-	ui.bind();
+	rend->setModel(m);
+
+	testTex3.bind();
+	this->sphere.render();
+	testTex3.unbind();
+
+	rend->endShader(Renderer::SCENE);
+
+	rend->startShader(Renderer::UI);
 
 	p = glm::ortho(0.0f, wm->getWidthf(), wm->getHeightf(), 0.0f);
 	v = glm::mat4(1.0f);
 	m = glm::translate(glm::vec3(32.0f, 32.0f, 0.0f)) * glm::scale(glm::vec3((float)font.getWidth(), (float)font.getHeight(), 0.0f));
 
-
-	ui.setUniformMatrix4f("Projection", p);
-	ui.setUniformMatrix4f("View", v);
-	ui.setUniformMatrix4f("Model", m);
+	rend->setProjection(p);
+	rend->setView(v);
+	rend->setModel(m);
 
 	font.renderString("Hello World");
 
-	ui.unbind();
+	rend->endShader(Renderer::UI);
 
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-
+	rend = 0;
 }
 
 void Game::release() {
 	terrain.release();
 	font.release();
+	playerTex.release();
+	testTex3.release();
 	testTex2.release();
 	testTex.release();
+	sphere.release();
 	test.release();
-	this->ui.release();
-	this->shader.release();
+	player.release();
+	Renderer::getInstance()->release();
 }

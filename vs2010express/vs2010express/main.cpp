@@ -27,7 +27,6 @@ THE SOFTWARE.
 
 
 int main(int argc, char** argv) {
-
 	Game game;
 
 	WindowConfig conf(
