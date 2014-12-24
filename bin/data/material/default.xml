@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<!--
+	This is the default material file
+	this will changed when I add in 
+	normal mapping, specular mapping,
+	emission mapping, etc.
+	
+	But for now this will be how 
+	materials are represented in 
+	the engine.
+-->
+<material>
+	<diffuse>
+		<rgb r="1.0" g="1.0" b="1.0" />
+	</diffuse>
+	<specular>
+		<rgb r="1.0" g="1.0" b="1.0" />
+	</specular>
+	<emission>
+		<rgb r="1.0" g="1.0" b="1.0" />
+	</emission>
+	<reflective-index>
+		<float value="1.0" />
+	</reflective-index>
+	<roughness>
+		<float value="1.0" />
+	</roughness>
+</material>

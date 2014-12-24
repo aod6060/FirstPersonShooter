@@ -44,6 +44,11 @@ struct Light {
 	vec3 diffuse;
 	vec3 specular;
 	float range; // This is for point light
+	vec3 spotDirection; // This is for spotLight
+	float spotExp;
+	float spotCutOff;
+	// Attenuation
+	float attenuation;
 };
 
 // Sampler main sampler for project
@@ -59,6 +64,7 @@ in vec2 pass_TexCoord0;
 //in vec4 pass_Color;
 in vec3 pass_Normal;
 in vec3 pass_LightDir[LIGHT_SIZE];
+in vec3 pass_SpotDirection[LIGHT_SIZE];
 in vec3 pass_Viewer;
 
 // This is the beckman equation,
@@ -133,19 +139,38 @@ float microfacet(vec3 l, vec3 v, vec3 n, float rough, float rn) {
 	return num / dem;
 }
 
-vec4 doLights2(int i, vec4 color, float dist, vec4 lightColor) {
+vec4 doLights2(int i, vec4 color, float dist, vec4 lightColor, vec3 L) {
 	vec4 color2;
-	
+	// Directional Light Calculation
 	if(lights[i].type == LIGHT_DIRECTIONAL) {
 		color2 = clamp(color + lightColor, 0.0, 1.0);
+		
+	// Point Light Calculation
 	} else if(lights[i].type == LIGHT_POINT) {
-	
-		float fscale = lights[i].range - dist;
+		float att = 1.0 / (1.0 + lights[i].attenuation * pow(dist, 2));
 		
-		fscale /= lights[i].range;
+		att *= att;
 		
-		if(lights[i].range - dist > 0.0) {
-			color2 = clamp(color * fscale + lightColor, 0.0, 1.0);
+		//if(lights[i].range - dist > 0.0) {
+			color2 = clamp(color * att + lightColor, 0.0, 1.0);
+		//}
+		
+	// Spot Light Calculation
+	} else if(lights[i].type == LIGHT_SPOT) {
+		vec3 _L = normalize(pass_LightDir[i]);
+		
+		vec3 spotDir = normalize(pass_SpotDirection[i]);
+		float spotEffect = dot(_L, spotDir);
+		spotEffect = pow(spotEffect, lights[i].spotExp);
+		
+		/*
+			http://www.tomdalling.com/blog/modern-opengl/07-more-lighting-ambient-specular-attenuation-gamma/
+			Thanks for simplification
+		*/
+		float att = spotEffect / (1.0 + lights[i].attenuation * pow(dist, 2));
+		
+		if(spotEffect < lights[i].spotCutOff) {
+			color2 = color * att + lightColor;
 		}
 	}
 	
@@ -158,12 +183,12 @@ vec4 doLights(int i, vec3 N, vec3 V, vec4 albedo, vec4 lightColor) {
 	if(lights[i].enabled == LIGHT_ENABLED) {
 		vec3 L = normalize(pass_LightDir[i]);
 		float NdotL = max(dot(N, L), 0.0);
-		float mf = microfacet(L, V, N, 0.1, 1.0);
+		float mf = microfacet(L, V, N, 0.1, 20.0);
 		
 		vec3 diffuse = lights[i].diffuse * albedo.xyz * NdotL * (1.0 - mf);
 		vec3 specular = lights[i].specular * albedo.xyz * mf;
 		
-		color = doLights2(i, vec4(specular+diffuse, 1.0), length(pass_LightDir[i]), lightColor);
+		color = doLights2(i, vec4(specular+diffuse, 1.0), length(pass_LightDir[i]), lightColor, L);
 	}
 	
 	return color;
@@ -177,46 +202,18 @@ void main() {
 	vec3 N = normalize(pass_Normal);
 	vec3 V = normalize(pass_Viewer);
 	
-	//float mf = microfacet(L, V, N, 1.0, 2.0);
-	
-	//vec3 diffuse = vec3(1.0) * albedo.xyz * NdotL;
-	//vec3 specular = vec3(1.0) * albedo.xyz * mf;
-	
 	color = vec4(1.0);
-	
-	/*
-	if(light0.enabled == LIGHT_ENABLED) {
-		vec3 L = normalize(pass_LightDir);
-		float NdotL = max(dot(N, L), 0.0);
-		float mf = microfacet(L, V, N, 1.0, 2.0);
-		
-		vec3 diffuse = light0.diffuse * albedo.xyz * NdotL * (1.0 - mf);
-		vec3 specular = light0.specular * albedo.xyz * mf;
-		
-		color *= vec4(specular, 1.0) + vec4(diffuse, 1.0);
-	}
-	*/
 	
 	vec4 lightColor;
 	
 	for(int i = 0; i < LIGHT_SIZE; i++) {
-		/*
-		if(lights[i].enabled == LIGHT_ENABLED) {
-			vec3 L = normalize(pass_LightDir[i]);
-			float NdotL = max(dot(N, L), 0.0);
-			float mf = microfacet(L, V, N, 1.0, 2.0);
-			
-			vec3 diffuse = lights[i].diffuse * albedo.xyz * NdotL * (1.0 - mf);
-			vec3 specular = lights[i].specular * albedo.xyz * mf;
-			
-			color += vec4(specular, 1.0) + vec4(diffuse, 1.0);
-		}
-		*/
-		
 		lightColor = doLights(i, N, V, albedo, lightColor);
 	}
 	
-	//color = vec4(specular, 1.0) + vec4(diffuse, 1.0);
+	vec3 gamma = vec3(1.0f/2.2f);
 	
-	out_Color = color * lightColor;
+	
+	out_Color = vec4(pow(color.xyz * lightColor.xyz, gamma), 1.0);
+	//out_Color = vec4(lights[4].spotDirection, 1.0f);
+	
 }

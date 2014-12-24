@@ -44,6 +44,11 @@ struct Light {
 	vec3 diffuse;
 	vec3 specular;
 	float range; // This is for point light
+	vec3 spotDirection;
+	float spotExp;
+	float spotCutOff;
+	// Attenuation
+	float attenuation;
 };
 
 // Matrix used to transform from camera space to clip space
@@ -71,9 +76,10 @@ layout(location = 2) in vec2 in_TexCoord0;
 // More stuff to come
 
 out vec2 pass_TexCoord0;
-out vec4 pass_Color;
+//out vec4 pass_Color;
 out vec3 pass_Normal;
 out vec3 pass_LightDir[LIGHT_SIZE];
+out vec3 pass_SpotDirection[LIGHT_SIZE];
 out vec3 pass_Viewer;
 
 void setLights(int i, vec3 posW) {
@@ -84,13 +90,14 @@ void setLights(int i, vec3 posW) {
 			pass_LightDir[i] = posW - lights[i].position;
 		} else if(lights[i].type == LIGHT_SPOT) {
 			// Implement This later
+			pass_LightDir[i] = posW - lights[i].position;
+			pass_SpotDirection[i] = lights[i].spotDirection;
 		}
 	}
 }
 
 // This is were the lights will be calculated
 void lighting() {
-
 	vec3 posW = (Model * vec4(in_Vertex, 1.0)).xyz;
 	
 	pass_Normal = mat3(Normal) * in_Normal;

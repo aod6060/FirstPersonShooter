@@ -49,6 +49,7 @@ class Game : public WindowCallback {
 	Light light1;
 	Light light2;
 	Light light3;
+	Light light4;
 
 	float yrot;
 public:

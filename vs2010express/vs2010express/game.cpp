@@ -62,23 +62,37 @@ void Game::init() {
 
 	light1.enabled = 1;
 	light1.type = Renderer::POINT;
-	light1.position = glm::vec3(3.0f, 10.0f, 20.0f);
+	light1.position = glm::vec3(3.0f, 5.0f, 20.0f);
 	light1.diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
 	light1.specular = glm::vec3(1.0f, 0.0f, 0.0f);
-	light1.range = 64.0f;
+	light1.range = 25.0f;
+	light1.attenuation = 0.01f;
 
 	light2.enabled = 1;
 	light2.type = Renderer::POINT;
-	light2.position = glm::vec3(-3.0f, 10.0f, 20.0f);
+	light2.position = glm::vec3(-3.0f, 5.0f, 20.0f);
 	light2.diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
 	light2.specular = glm::vec3(0.0f, 1.0f, 0.0f);
-	light2.range = 64.0f;
+	light2.range = 25.0f;
+	light2.attenuation = 0.01f;
 
 	light3.enabled = 1;
 	light3.type = Renderer::POINT;
+	light3.position = glm::vec3(0.0f, 5.0f, 17.0f);
 	light3.diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
 	light3.specular = glm::vec3(0.0f, 0.0f, 1.0f);
-	light3.range = 64.0f;
+	light3.range = 25.0f;
+	light3.attenuation = 0.01f;
+
+	light4.enabled = 1;
+	light4.type = Renderer::SPOT;
+	light4.position = glm::vec3(0.0f, 5.0f, 8.0f);
+	light4.diffuse = glm::vec3(1.0f, 0.0f, 1.0f);
+	light4.specular = glm::vec3(1.0f, 0.0f, 1.0f);
+	light4.spotCutOff = 128.0f;
+	light4.spotExp = 2.0f;
+	light4.spotDirection = glm::vec3(0.0f, -0.5f, -0.5f);
+	light4.attenuation = 0.001f;
 }
 	
 void Game::update() {
@@ -115,12 +129,11 @@ void Game::update() {
 
 	rend->setCamera(cam);
 
-	this->light3.position = cam.getPos();
-
 	rend->setLight(Renderer::LIGHT0, this->light0);
 	rend->setLight(Renderer::LIGHT1, this->light1);
 	rend->setLight(Renderer::LIGHT2, this->light2);
 	rend->setLight(Renderer::LIGHT3, this->light3);
+	rend->setLight(Renderer::LIGHT4, this->light4);
 
 	m = glm::translate(glm::vec3(0.0f, 2.0f, -5.0f)) *
 				  glm::rotate(yrot, glm::vec3(1.0f, 1.0f, 1.0f));
@@ -153,7 +166,7 @@ void Game::update() {
 
 	playerTex.unbind();
 
-	m = glm::translate(glm::vec3(20.0f, 0.0f, 20.0f));
+	m = glm::translate(glm::vec3(0.0f, 0.0f, 18.0f));
 
 	rend->setModel(m);
 

@@ -1013,9 +1013,7 @@ void Renderer::setLight(Renderer::Lights light, Light& l) {
 	if(this->shaderType == Renderer::SCENE) {
 		std::stringstream ss;
 		std::stringstream ss2;
-
 		ss << "lights[" << light << "]";
-
 		ss2 << ss.str() << ".enabled";
 		scene.setUniform1i(ss2.str(), l.enabled);
 		ss2.str(std::string());
@@ -1033,6 +1031,18 @@ void Renderer::setLight(Renderer::Lights light, Light& l) {
 		ss2.str(std::string());
 		ss2 << ss.str() << ".range";
 		scene.setUniform1f(ss2.str(), l.range);
+		ss2.str(std::string());
+		ss2 << ss.str() << ".spotDirection";
+		scene.setUniform3f(ss2.str(), l.spotDirection);
+		ss2.str(std::string());
+		ss2 << ss.str() << ".spotExp";
+		scene.setUniform1f(ss2.str(), l.spotExp);
+		ss2.str(std::string());
+		ss2 << ss.str() << ".spotCutOff";
+		scene.setUniform1f(ss2.str(), l.spotCutOff);
+		ss2.str(std::string());
+		ss2 << ss.str() << ".attenuation";
+		scene.setUniform1f(ss2.str(), l.attenuation);
 	}
 }
 
@@ -1058,5 +1068,17 @@ void Renderer::createLight(int i) {
 	scene.createUniform(ss2.str());
 	ss2.str(std::string());
 	ss2 << ss.str() << ".range";
+	scene.createUniform(ss2.str());
+	ss2.str(std::string());
+	ss2 << ss.str() << ".spotDirection";
+	scene.createUniform(ss2.str());
+	ss2.str(std::string());
+	ss2 << ss.str() << ".spotExp";
+	scene.createUniform(ss2.str());
+	ss2.str(std::string());
+	ss2 << ss.str() << ".spotCutOff";
+	scene.createUniform(ss2.str());
+	ss2.str(std::string());
+	ss2 << ss.str() << ".attenuation";
 	scene.createUniform(ss2.str());
 }

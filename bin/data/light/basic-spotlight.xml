@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<light>
+	<enabled>
+		<boolean value="true" />
+	</enabled>
+	<type>
+		<light-type value="SPOT" />
+	</type>
+	<position>
+		<vec3 x="0.0" y="20.0" z="0.0" />
+	</position>
+	<diffuse>
+		<rgb r="1.0" g="1.0" b="1.0" />
+	</diffuse>
+	<specular>
+		<rgb r="1.0" g="1.0" b="1.0" />
+	</specular>
+	<spot-direction>
+		<vec3 x="0.0" y="-0.5" z="0.0" />
+	</spot-direction>
+	<spot-exp>
+		<float value="8.0" />
+	</spot-exp>
+	<spot-cut-off>
+		<float value="128.0" />
+	</spot-cut-off>
+	<attenuation>
+		<float value="0.1" />
+	</attenuation>
+</light>

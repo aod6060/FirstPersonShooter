@@ -66,7 +66,25 @@ struct Light {
 	glm::vec3 position;
 	glm::vec3 diffuse;
 	glm::vec3 specular;
-	float range;
+	// Point Light stuff
+	float range; // This is decreprecated
+	// Spot Light Specific Stuff
+	glm::vec3 spotDirection;
+	float spotExp;
+	float spotCutOff;
+	// Attention
+	float attenuation;
+};
+
+/*
+	Material
+*/
+struct Material {
+	glm::vec3 diffuse;
+	glm::vec3 specular;
+	glm::vec3 emission;
+	float reflectIndex;
+	float roughness;
 };
 
 /*
@@ -386,13 +404,15 @@ public:
 	*/
 	enum ShaderTypes {
 		SCENE = 0,
-		UI
+		UI,
+		SHADER_TYPE_SIZE
 	};
 
 	enum LightType {
 		DIRECTION = 0,
 		POINT,
-		SPOT
+		SPOT,
+		LIGHT_TYPE_SIZE
 	};
 
 	enum Lights {
