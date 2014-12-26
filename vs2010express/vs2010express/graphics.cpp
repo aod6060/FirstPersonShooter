@@ -433,6 +433,94 @@ void Texture::release() {
 	glDeleteTextures(1, &id);
 }
 
+// Cubemap
+Cubemap::Cubemap() {
+	this->id = 0;
+}
+
+void Cubemap::init(
+	std::string px,
+	std::string nx,
+	std::string py,
+	std::string ny,
+	std::string pz,
+	std::string nz
+	) {
+	std::vector<std::string> images;
+	std::vector<int> types;
+	// Add images to images vector
+	images.push_back(px);
+	images.push_back(nx);
+	images.push_back(py);
+	images.push_back(ny);
+	images.push_back(pz);
+	images.push_back(nz);
+	// Adding Cubemap types to 
+	types.push_back(GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+	types.push_back(GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+	types.push_back(GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+	types.push_back(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+	types.push_back(GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+	types.push_back(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+	// createing texture
+	glGenTextures(1, &this->id);
+	// bind cubemap
+	glBindTexture(GL_TEXTURE_CUBE_MAP, this->id);
+
+	// Run through vectors and load up information
+	// to the cubemap
+	for(int i = 0; i < images.size(); i++) {
+		SDL_Surface* surf = 0; // add sdl surface
+
+		surf = IMG_Load(images[i].c_str()); // Load Image Via SDL_image
+
+		if(surf == 0) { // Check to see if images exists
+			continue;
+		}
+
+		int format = GL_RGB;
+
+		if(surf->format->BytesPerPixel == 4) {
+			format = GL_RGBA;
+		}
+
+		glTexImage2D(
+			types[i],
+			0,
+			format,
+			surf->w,
+			surf->h,
+			0,
+			format,
+			GL_UNSIGNED_BYTE,
+			surf->pixels);
+
+		SDL_FreeSurface(surf); // free surface
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	// unbind cubemap
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
+
+void Cubemap::bind(int tt) {
+	glActiveTexture(tt);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, this->id);
+}
+
+void Cubemap::unbind() {
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
+
+void Cubemap::release() {
+	glDeleteTextures(1, &this->id);
+}
+
 // Font
 void Font::_updateBuffer(std::string str) {
 
@@ -651,51 +739,9 @@ void Terrain::init(std::string fn) {
 			tris.push_back(t2);
 		}
 	}
-	/*
-	for(int y = 0; y < this->height - 1; y++) {
-		for(int x = 0; x < this->width - 1; x++) {
-			glm::vec3 off = glm::vec3(1.0, 0.0, 1.0);
-			float hl, hr, hd, hu;
 
-			if(y * this->width + (x - 1) >= 0) {
-				hl = v[y * this->width + (x - 1)].y;
-			} else {
-				hl = 1.0f;
-			}
-
-			if(y * this->width + (x + 1) < this->width) {
-				hr = v[y * this->width + (x + 1)].y;
-			} else {
-				hr = 0.0f;
-			}
-
-			if((y - 1) * this->width + x >= 0) {
-				hd = v[(y - 1) * this->width + x].y;
-			} else {
-				hd = 1.0f;
-			}
-
-			if((y + 1) * this->width + x < this->height) {
-				hu = v[(y + 1) * this->width + x].y;
-			} else {
-				hu = 0.0f;
-			}
-
-			glm::vec3 N;
-
-			N.x = hl - hr;
-			N.z = hd - hu;
-			N.y = 2.0f;
-
-			N = glm::normalize(N);
-
-			n2[y * this->width + x] = -N;
-		}
-	}
-	*/
 	this->count = tris.size() * 3;
 
-	
 	for(int i = 0; i < tris.size(); i++) {
 		
 		glm::vec3 U;
@@ -720,7 +766,6 @@ void Terrain::init(std::string fn) {
 		n[i].generate();
 		n2[i] = n[i].vnormal;
 	}
-	
 
 	glGenVertexArrays(1, &this->vao);
 
@@ -868,7 +913,6 @@ void Camera::setRot(glm::vec2 r) {
 }
 
 // Renderer
-
 Renderer* Renderer::instance = 0;
 
 void Renderer::_release() {
@@ -910,19 +954,15 @@ void Renderer::init() {
 	scene.createUniform("CameraPosition");
 	scene.createUniform("tex0");
 	scene.setUniform1i("tex0", 0);
+	scene.createUniform("reflectMap");
+	scene.setUniform1i("reflectMap", 1);
+
 	// This is the lighting section
-	/*
-	scene.createUniform("light0.enabled");
-	scene.setUniform1i("light0.enabled", 0);
-	scene.createUniform("light0.type");
-	scene.setUniform1i("light0.type", 0);
-	scene.createUniform("light0.position");
-	scene.createUniform("light0.diffuse");
-	scene.createUniform("light0.specular");
-	*/
 	for(int i = 0; i < Renderer::LIGHT_SIZE; i++) {
 		this->createLight(i);
 	}
+	this->createMaterial();
+
 	scene.unbind();
 
 	// Create UI Shader
@@ -1081,4 +1121,58 @@ void Renderer::createLight(int i) {
 	ss2.str(std::string());
 	ss2 << ss.str() << ".attenuation";
 	scene.createUniform(ss2.str());
+}
+
+void Renderer::createMaterial() {
+	std::stringstream ss;
+	std::stringstream ss2;
+	ss << "material";
+	ss2 << ss.str() << ".diffuse";
+	scene.createUniform(ss2.str());
+	ss2.str("");
+	ss2 << ss.str() << ".specular";
+	scene.createUniform(ss2.str());
+	ss2.str("");
+	ss2 << ss.str() << ".emission";
+	scene.createUniform(ss2.str());
+	ss2.str("");
+	ss2 << ss.str() << ".roughness";
+	scene.createUniform(ss2.str());
+	ss2.str("");
+	ss2 << ss.str() << ".energyConserve";
+	scene.createUniform(ss2.str());
+	ss2.str("");
+	ss2 << ss.str() << ".reflectIndex";
+	scene.createUniform(ss2.str());
+	ss2.str("");
+	ss2 << ss.str() << ".metal";
+	scene.createUniform(ss2.str());
+	ss2.str("");
+}
+
+void Renderer::setMaterial(Material& m) {
+	std::stringstream ss;
+	std::stringstream ss2;
+	ss << "material";
+	ss2 << ss.str() << ".diffuse";
+	scene.setUniform3f(ss2.str(), m.diffuse);
+	ss2.str("");
+	ss2 << ss.str() << ".specular";
+	scene.setUniform3f(ss2.str(), m.specular);
+	ss2.str("");
+	ss2 << ss.str() << ".emission";
+	scene.setUniform3f(ss2.str(), m.emission);
+	ss2.str("");
+	ss2 << ss.str() << ".reflectIndex";
+	scene.setUniform1f(ss2.str(), m.reflectIndex);
+	ss2.str("");
+	ss2 << ss.str() << ".roughness";
+	scene.setUniform1f(ss2.str(), m.roughness);
+	ss2.str("");
+	ss2 << ss.str() << ".energyConserve";
+	scene.setUniform1f(ss2.str(), m.energyConserve);
+	ss2.str("");
+	ss2 << ss.str() << ".metal";
+	scene.setUniform1f(ss2.str(), m.metal);
+	ss2.str("");
 }

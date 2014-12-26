@@ -39,19 +39,39 @@ class Game : public WindowCallback {
 	StaticMesh test;
 	StaticMesh sphere;
 	StaticMesh player;
+	StaticMesh monkey;
 
 	Texture testTex;
 	Texture testTex2;
 	Texture playerTex;
 	Texture testTex3;
+	Texture sand;
+	Texture silver;
+	Texture gold;
+	Texture copper;
 
+	Cubemap reflectMap;
+
+	// Ligths
 	Light light0;
 	Light light1;
 	Light light2;
 	Light light3;
 	Light light4;
+	// Material
+	Material def;
+
+	Material tests[10];
 
 	float yrot;
+
+
+	void renderSphere(glm::vec3 location, Material& material, Texture& tex);
+
+	void createMaterial(Material& m, glm::vec3 d, glm::vec3 s, glm::vec3 e, float ri, float r, float ec, float metal);
+
+	int test_index;
+
 public:
 
 	virtual void init();

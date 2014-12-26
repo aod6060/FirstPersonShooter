@@ -85,6 +85,8 @@ struct Material {
 	glm::vec3 emission;
 	float reflectIndex;
 	float roughness;
+	float energyConserve;
+	float metal;
 };
 
 /*
@@ -277,6 +279,33 @@ public:
 };
 
 /*
+	Cubemap
+
+	This is a simple cube map loader.
+*/
+class Cubemap {
+	GLuint id;
+public:
+	Cubemap();
+
+	void init(
+		std::string px,
+		std::string nx,
+		std::string py,
+		std::string ny,
+		std::string pz,
+		std::string nz
+		);
+
+	void bind(int tt = GL_TEXTURE0);
+
+	void unbind();
+
+	void release();
+
+};
+
+/*
 	Font
 
 	This is the font class.
@@ -433,6 +462,8 @@ private:
 
 	void createLight(int i);
 
+	void createMaterial();
+
 public:
 
 
@@ -455,6 +486,8 @@ public:
 	void setCamera(Camera& cam);
 
 	void setLight(Renderer::Lights lights, Light& l);
+
+	void setMaterial(Material& m);
 
 };
 

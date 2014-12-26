@@ -37,6 +37,9 @@ THE SOFTWARE.
 #define LIGHT_POINT 1
 #define LIGHT_SPOT 2
 
+/*
+	Light Structure
+*/
 struct Light {
 	int enabled;
 	int type;
@@ -50,7 +53,6 @@ struct Light {
 	// Attenuation
 	float attenuation;
 };
-
 // Matrix used to transform from camera space to clip space
 uniform mat4 Projection;
 // Matrix used to transform from world space to camera space
@@ -64,7 +66,7 @@ uniform mat4 TextureMatrix;
 // this is the camea coord (note, this helps with specular)
 uniform vec3 CameraPosition;
 
-// LightS
+// Lights
 uniform Light lights[LIGHT_SIZE];
 
 // Vertex Attribute
@@ -81,6 +83,8 @@ out vec3 pass_Normal;
 out vec3 pass_LightDir[LIGHT_SIZE];
 out vec3 pass_SpotDirection[LIGHT_SIZE];
 out vec3 pass_Viewer;
+out vec3 pass_pos_eye;
+out vec3 pass_n_eye;
 
 void setLights(int i, vec3 posW) {
 	if(lights[i].enabled == LIGHT_ENABLED) {
@@ -109,11 +113,16 @@ void lighting() {
 	}
 }
 
+// this is were the reflection map is calculated
+void reflectMap() {
+	pass_pos_eye = vec3(View * Model * vec4(in_Vertex, 1.0));
+	pass_n_eye = vec3(transpose(inverse(View * Model)) * vec4(in_Normal, 1.0));
+}
+
 void main() {
 	pass_TexCoord0 = (TextureMatrix * vec4(in_TexCoord0, 1.0, 1.0)).xy;
 	gl_Position = Projection * View * Model * vec4(in_Vertex, 1.0);
 	
-	vec3 posW = (Model * vec4(in_Vertex, 1.0)).xyz;
-	
 	lighting();
+	reflectMap();
 }

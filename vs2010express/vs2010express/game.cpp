@@ -25,6 +25,9 @@ THE SOFTWARE.
 #include "game.h"
 
 void Game::init() {
+
+	this->test_index = 0;
+
 	// Init Renderer
 	Renderer::getInstance()->init();
 
@@ -40,6 +43,21 @@ void Game::init() {
 	
 	this->sphere.init("data/mesh/sphere.smesh");
 	testTex3.init("data/texture/dirt0.png");
+
+	monkey.init("data/mesh/monkey.smesh");
+	sand.init("data/texture/sand0.png");
+
+	silver.init("data/texture/silver.png");
+	gold.init("data/texture/gold.png");
+	copper.init("data/texture/copper.png");
+
+	reflectMap.init(
+		"data/skybox/land2/west.png",
+		"data/skybox/land2/east.png",
+		"data/skybox/land2/up.png",
+		"data/skybox/land2/down.png",
+		"data/skybox/land2/south.png",
+		"data/skybox/land2/north.png");
 
 	this->terrain.init("data/heightmap/heightmap1.png");
 
@@ -93,6 +111,36 @@ void Game::init() {
 	light4.spotExp = 2.0f;
 	light4.spotDirection = glm::vec3(0.0f, -0.5f, -0.5f);
 	light4.attenuation = 0.001f;
+
+	def.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+	def.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+	def.emission = glm::vec3(0.0);
+	def.roughness = 1.0f;
+	def.reflectIndex = 1.0f;
+	def.energyConserve = 0.3f;
+
+
+	float ri = 1.0f;
+	float r = 1.0f;
+	float ec = 0.0f;
+	float metal = 0.0f;
+
+	for(int i = 0; i < 10; i++) {
+		this->createMaterial(
+			this->tests[i],
+			glm::vec3(1.0),
+			glm::vec3(1.0),
+			glm::vec3(0.0),
+			ri,
+			r,
+			ec,
+			0.0);
+
+		ri -= 0.1;
+		r -= 0.1;
+		ec += 0.1;
+		metal += 0.1;
+	}
 }
 	
 void Game::update() {
@@ -111,6 +159,15 @@ void Game::update() {
 			wm->setRelativeMouseMode(SDL_FALSE);
 		} else {
 			wm->setRelativeMouseMode(SDL_TRUE);
+		}
+	}
+
+	if(wm->mouseButtonHit(SDL_BUTTON_LEFT)) {
+		this->test_index++;
+
+
+		if(this->test_index > 9) {
+			this->test_index = 0;
 		}
 	}
 
@@ -134,6 +191,10 @@ void Game::update() {
 	rend->setLight(Renderer::LIGHT2, this->light2);
 	rend->setLight(Renderer::LIGHT3, this->light3);
 	rend->setLight(Renderer::LIGHT4, this->light4);
+
+	rend->setMaterial(this->tests[this->test_index]);
+
+	reflectMap.bind(GL_TEXTURE1);
 
 	m = glm::translate(glm::vec3(0.0f, 2.0f, -5.0f)) *
 				  glm::rotate(yrot, glm::vec3(1.0f, 1.0f, 1.0f));
@@ -174,6 +235,39 @@ void Game::update() {
 	this->sphere.render();
 	testTex3.unbind();
 
+	m = glm::translate(glm::vec3(18.0f, 0.0f, 18.0f));
+
+	rend->setModel(m);
+
+	sand.bind();
+	this->monkey.render();
+	sand.unbind();
+
+	glm::vec3 loc(0.0f, 30.0f, -20);
+
+	for(int i = 0; i < 10; i++) {
+		this->renderSphere(loc, this->tests[i], silver);
+		loc.z += 5.0f;
+	}
+
+	loc.x = 5.0;
+	loc.z = -20.0;
+
+	for(int i = 0; i < 10; i++) {
+		this->renderSphere(loc, this->tests[i], copper);
+		loc.z += 5.0f;
+	}
+
+	loc.x = -5.0;
+	loc.z = -20.0;
+
+	for(int i = 0; i < 10; i++) {
+		this->renderSphere(loc, this->tests[i], gold);
+		loc.z += 5.0f;
+	}
+
+	reflectMap.unbind();
+
 	rend->endShader(Renderer::SCENE);
 
 	rend->startShader(Renderer::UI);
@@ -197,11 +291,43 @@ void Game::release() {
 	terrain.release();
 	font.release();
 	playerTex.release();
+	copper.release();
+	gold.release();
+	silver.release();
+	reflectMap.release();
+	sand.release();
 	testTex3.release();
 	testTex2.release();
 	testTex.release();
+	monkey.release();
 	sphere.release();
 	test.release();
 	player.release();
 	Renderer::getInstance()->release();
+}
+
+void Game::renderSphere(glm::vec3 location, Material& material, Texture& tex) {
+	Renderer* rend = Renderer::getInstance();
+	
+	glm::mat4 m = glm::translate(location);
+
+	rend->setMaterial(material);
+
+	rend->setModel(m);
+
+	tex.bind();
+
+	sphere.render();
+
+	tex.unbind();
+}
+
+void Game::createMaterial(Material& m, glm::vec3 d, glm::vec3 s, glm::vec3 e, float ri, float r, float ec, float metal) {
+	m.diffuse = d;
+	m.specular = s;
+	m.emission = e;
+	m.reflectIndex = ri;
+	m.roughness = r;
+	m.energyConserve = ec;
+	m.metal = metal;
 }

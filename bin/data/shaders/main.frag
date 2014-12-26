@@ -51,11 +51,27 @@ struct Light {
 	float attenuation;
 };
 
+/*
+	Material
+*/
+struct Material {
+	vec3 diffuse;
+	vec3 specular;
+	vec3 emission;
+	float roughness;
+	float energyConserve;
+	float reflectIndex;
+	float metal;
+};
+
 // Sampler main sampler for project
 uniform sampler2D tex0;
-
+// Reflective Sampler
+uniform samplerCube reflectMap;
 // Lights
 uniform Light lights[LIGHT_SIZE];
+// Material
+uniform Material material;
 
 // output color to framebuffer
 out vec4 out_Color;
@@ -66,20 +82,62 @@ in vec3 pass_Normal;
 in vec3 pass_LightDir[LIGHT_SIZE];
 in vec3 pass_SpotDirection[LIGHT_SIZE];
 in vec3 pass_Viewer;
+// This is for reflectMap
+in vec3 pass_pos_eye;
+in vec3 pass_n_eye;
 
-// This is the beckman equation,
+// This is used to calculate the fresnel term
+float fresnel(vec3 v, vec3 h, float rn) {
+	// Calculate Fresnel Term n = 0.0 for the moment
+	float VdotH = dot(v, h);
+	
+	float f0 = (1.0 - rn) / (1.0 + rn);
+	
+	f0 = f0 * f0;
+	
+	float p0 = VdotH * VdotH * VdotH * VdotH * VdotH;
+	
+	return f0 + (1.0 - f0) * p0;
+}
+
+float geometry(vec3 l, vec3 v, vec3 h, vec3 n) {
+	// Cook Torrence Optimize
+	float NdotH = dot(n, h);
+	float NdotV = dot(n, v);
+	float NdotL = dot(n, l);
+	float VdotH = dot(v, h);
+	
+	float f1 = 2 * NdotH * NdotV;
+	float f2 = 2 * NdotH * NdotL;
+	
+	float iVdotH = 1.0 / VdotH;
+	
+	float v1 = f1 * iVdotH;
+	float v2 = f2 * iVdotH;
+
+	float g = min(1, min(v1, v2));
+	
+	return g;
+}
+
 // This is far more advace Normal Distribution than blinn-phong
-float beckman(vec3 h, vec3 n, float m) {
+float distr(vec3 h, vec3 n, float m) {
+
 	float NdotHV = dot(n, h);
-	float m2 = m * m;
+	
+	float alpha = m * m;
+	
 	float NdotHV2 = NdotHV * NdotHV;
-	float NdotHV4 = NdotHV * NdotHV * NdotHV * NdotHV;
 	
-	float dim = 3.14 * m2 * NdotHV4;
+	float NdotHV4 = NdotHV2 * NdotHV2;
 	
-	float num = exp((NdotHV2 - 1) / (m2 * NdotHV2));
+	float dim = 3.14 * pow(alpha, 2) * NdotHV4;
 	
-	return num / dim;
+	float num = exp((NdotHV2 - 1) / (alpha*alpha * NdotHV2));
+	
+	float d = num / dim;
+	
+	return d;
 }
 
 // Microfacet Lighting
@@ -98,39 +156,23 @@ float microfacet(vec3 l, vec3 v, vec3 n, float rough, float rn) {
 	// Calculate Half Vector
 	vec3 h = normalize(l + v);
 	// Calculating Dot Products
-	float NdotL = dot(n, l);
-	float NdotHV = dot(n, h);
-	float NdotV = dot(n, v);
-	float LdotHV = dot(l, h);
-	float VdotHV = dot(v, h);
 	
 	// Calculate demenator
-	float dem = 4 * NdotL * NdotV;
+	float NdotL = dot(n, l);
+	float NdotV = dot(n, v);
 	
-	// Calculate Fresnel Term n = 0.0 for the moment
-	float f0 = (1.0 - rn) / (1.0 + rn);
-	f0 = f0 * f0;
-	//float f0 = 0.5;
+	float dem = 4.0 * NdotL * NdotV;
 	
-	float p0 = 1.0 - LdotHV;
-	
-	p0 = p0 * p0 * p0 * p0 * p0;
-	
-	float F = f0 + (1.0 - f0)*p0;
-	
-	// Calculate Normal Distribution or D term, using blinn-phong
-	float a = (2.0 / pow(rough, 2.0)) - 2.0; // Shineness Term
+	float F = fresnel(v, h, rn);
 	
 	//float D = ((a + 2.0) / (2.0*3.14)) * pow(NdotHV, a);
 	
-	// Beckman
-	float D = beckman(h, n, rough);
+	// Distribution
+	float D = distr(h, n, rough);
 	
 	// Calculate Geometry term, using implicit for simplicity
 	//float G = NdotL * NdotV;
-	
-	float g0 = min((2*NdotHV*NdotV)/VdotHV, (2*NdotHV*NdotL)/VdotHV);
-	float G = min(1, g0);
+	float G = geometry(l, v, h, n);
 	
 	// Catting all terms
 	float num = F * G * D;
@@ -139,11 +181,35 @@ float microfacet(vec3 l, vec3 v, vec3 n, float rough, float rn) {
 	return num / dem;
 }
 
-vec4 doLights2(int i, vec4 color, float dist, vec4 lightColor, vec3 L) {
+/*
+	diffuse(vec3 N, vec3 L, float energyConverasion
+*/
+float diffuse(vec3 N, vec3 L, float energyConversion) {
+
+	float NdotL = dot(N, L);
+	
+	float f1 = NdotL + energyConversion;
+	
+	float f2 = 1 + energyConversion;
+	
+	f2 = f2 * f2;
+
+	return clamp(f1 / f2, 0.0f, 1.0f);
+}
+
+float fresnelReflection(vec3 v, vec3 l, float rn) {
+	vec3 h = normalize(l + v);
+	
+	float F = fresnel(v, h, rn);
+	
+	return F;
+}
+
+vec4 doLights2(int i, vec4 color, float dist, vec3 L) {
 	vec4 color2;
 	// Directional Light Calculation
 	if(lights[i].type == LIGHT_DIRECTIONAL) {
-		color2 = clamp(color + lightColor, 0.0, 1.0);
+		color2 = clamp(color, 0.0, 1.0);
 		
 	// Point Light Calculation
 	} else if(lights[i].type == LIGHT_POINT) {
@@ -152,7 +218,7 @@ vec4 doLights2(int i, vec4 color, float dist, vec4 lightColor, vec3 L) {
 		att *= att;
 		
 		//if(lights[i].range - dist > 0.0) {
-			color2 = clamp(color * att + lightColor, 0.0, 1.0);
+			color2 = clamp(color * att, 0.0, 1.0);
 		//}
 		
 	// Spot Light Calculation
@@ -169,51 +235,62 @@ vec4 doLights2(int i, vec4 color, float dist, vec4 lightColor, vec3 L) {
 		*/
 		float att = spotEffect / (1.0 + lights[i].attenuation * pow(dist, 2));
 		
-		if(spotEffect < lights[i].spotCutOff) {
-			color2 = color * att + lightColor;
-		}
+		color2 = clamp(color * att, 0.0, 1.0);
 	}
 	
 	return color2;
 }
 
-vec4 doLights(int i, vec3 N, vec3 V, vec4 albedo, vec4 lightColor) {
-	vec4 color = lightColor;
+vec4 doLights(int i, vec3 N, vec3 V, vec4 albedo) {
+	vec4 color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	
 	if(lights[i].enabled == LIGHT_ENABLED) {
 		vec3 L = normalize(pass_LightDir[i]);
-		float NdotL = max(dot(N, L), 0.0);
-		float mf = microfacet(L, V, N, 0.1, 20.0);
 		
-		vec3 diffuse = lights[i].diffuse * albedo.xyz * NdotL * (1.0 - mf);
-		vec3 specular = lights[i].specular * albedo.xyz * mf;
+		float mf = microfacet(L, V, N, material.roughness, material.reflectIndex);
 		
-		color = doLights2(i, vec4(specular+diffuse, 1.0), length(pass_LightDir[i]), lightColor, L);
+		vec3 diffuse = lights[i].diffuse * material.diffuse * albedo.xyz * diffuse(N, L, material.energyConserve);
+		vec3 specular = lights[i].specular * material.specular * albedo.xyz * mf;
+		vec3 emission = material.emission;
+		
+		color = doLights2(i, vec4(diffuse + specular + emission, 1.0), length(pass_LightDir[i]), L);
 	}
 	
 	return color;
 }
 
+// This takes care of the reflect map
+vec4 getReflectMap() {
+	vec3 incident_eye = normalize(pass_pos_eye);
+	vec3 normal = normalize(pass_n_eye);
+	
+	vec3 reflected = reflect(incident_eye, normal);
+	
+	return texture(reflectMap, reflected);
+}
+
 void main() {
 	// Setting to just white output for now
 	vec4 color;
-	vec4 albedo = texture(tex0, pass_TexCoord0);
-	
 	vec3 N = normalize(pass_Normal);
 	vec3 V = normalize(pass_Viewer);
+	vec4 albedo = texture(tex0, pass_TexCoord0);
 	
 	color = vec4(1.0);
 	
-	vec4 lightColor;
+	vec4 lightColors[LIGHT_SIZE];
 	
 	for(int i = 0; i < LIGHT_SIZE; i++) {
-		lightColor = doLights(i, N, V, albedo, lightColor);
+		lightColors[i] = doLights(i, N, V, albedo);
 	}
 	
-	vec3 gamma = vec3(1.0f/2.2f);
+	vec4 finalLightColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	
+	for(int i = 0; i < LIGHT_SIZE; i++) {
+		finalLightColor = clamp(lightColors[i] + finalLightColor, 0.0, 1.0);
+	}
 	
-	out_Color = vec4(pow(color.xyz * lightColor.xyz, gamma), 1.0);
-	//out_Color = vec4(lights[4].spotDirection, 1.0f);
+	vec3 gamma = vec3(1.0/2.2);
 	
+	out_Color = vec4(pow(color.xyz * finalLightColor.xyz, gamma), 1.0);
 }
