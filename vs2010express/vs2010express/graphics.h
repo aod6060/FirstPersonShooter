@@ -175,7 +175,7 @@ public:
 */
 class StaticMesh {
 	GLuint vao;
-	GLuint vbo[3];
+	GLuint vbo[4];
 
 	GLuint size;
 
@@ -354,7 +354,7 @@ class Terrain {
 
 	GLuint vao;
 
-	GLuint vbo[3];
+	GLuint vbo[5];
 	GLuint ibo;
 
 	Uint32 count;

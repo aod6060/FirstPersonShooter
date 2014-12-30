@@ -49,8 +49,9 @@ class Game : public WindowCallback {
 	Texture silver;
 	Texture gold;
 	Texture copper;
-
-	Cubemap reflectMap;
+	Texture normal_map;
+	Texture roughness_map;
+	//Cubemap reflectMap;
 
 	// Ligths
 	Light light0;

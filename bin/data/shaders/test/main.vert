@@ -75,27 +75,32 @@ layout(location = 0) in vec3 in_Vertex;
 layout(location = 1) in vec3 in_Normal;
 // TexCoord Attribute
 layout(location = 2) in vec2 in_TexCoord0;
+// Tangent Space Attribute
+layout(location = 3) in vec3 in_Tangent;
+// BiTangent Space Attribute
+layout(location = 4) in vec3 in_BiTangent;
+
 // More stuff to come
 
 out vec2 pass_TexCoord0;
 //out vec4 pass_Color;
 out vec3 pass_Normal;
+out vec3 pass_Tangent;
+//out vec3 pass_BiTangent;
 out vec3 pass_LightDir[LIGHT_SIZE];
 out vec3 pass_SpotDirection[LIGHT_SIZE];
 out vec3 pass_Viewer;
-out vec3 pass_pos_eye;
-out vec3 pass_n_eye;
 
 void setLights(int i, vec3 posW) {
 	if(lights[i].enabled == LIGHT_ENABLED) {
 		if(lights[i].type == LIGHT_DIRECTIONAL) {
-			pass_LightDir[i] = lights[i].position;
+			pass_LightDir[i] = normalize(lights[i].position);
 		} else if(lights[i].type == LIGHT_POINT) {
-			pass_LightDir[i] = posW - lights[i].position;
+			pass_LightDir[i] = normalize(posW - lights[i].position);
 		} else if(lights[i].type == LIGHT_SPOT) {
 			// Implement This later
-			pass_LightDir[i] = posW - lights[i].position;
-			pass_SpotDirection[i] = lights[i].spotDirection;
+			pass_LightDir[i] = normalize(posW - lights[i].position);
+			pass_SpotDirection[i] = normalize(lights[i].spotDirection);
 		}
 	}
 }
@@ -105,24 +110,32 @@ void lighting() {
 	vec3 posW = (Model * vec4(in_Vertex, 1.0)).xyz;
 	
 	pass_Normal = mat3(Normal) * in_Normal;
+	pass_Tangent = mat3(Normal) * in_Tangent;
+	//pass_BiTangent = mat3(Normal) * in_BiTangent;
 	
-	pass_Viewer = posW - CameraPosition;
+	//vec3 N = normalize(mat3(Normal) * in_Normal);
+	
+	vec3 V = normalize(posW - CameraPosition);
+	
+	pass_Viewer = V;
 	
 	for(int i = 0; i < LIGHT_SIZE; i++) {
 		setLights(i, posW);
 	}
 }
 
+/*
 // this is were the reflection map is calculated
 void reflectMap() {
 	pass_pos_eye = vec3(View * Model * vec4(in_Vertex, 1.0));
-	pass_n_eye = vec3(transpose(inverse(View * Model)) * vec4(in_Normal, 1.0));
+	pass_n_eye = vec3(transpose(inverse(View * Model)) * vec4(in_Normal, 0.0));
 }
+*/
 
 void main() {
 	pass_TexCoord0 = (TextureMatrix * vec4(in_TexCoord0, 1.0, 1.0)).xy;
 	gl_Position = Projection * View * Model * vec4(in_Vertex, 1.0);
 	
 	lighting();
-	reflectMap();
+	//reflectMap();
 }

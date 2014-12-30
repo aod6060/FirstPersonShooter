@@ -1,4 +1,4 @@
-﻿Build started 12/26/2014 3:45:08 AM.
+﻿Build started 12/30/2014 3:58:35 PM.
      1>Project "C:\Users\Fred\Desktop\Games\Projects\github\FirstPersonShooter\vs2010express\vs2010express\vs2010express.vcxproj" on node 2 (clean target(s)).
      1>_PrepareForClean:
          Deleting file "Debug\vs2010express.lastbuildstate".
@@ -6,4 +6,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.05
+Time Elapsed 00:00:00.03

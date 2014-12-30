@@ -280,10 +280,66 @@ void StaticMesh::init(std::string fn) {
 		n[i] = glm::vec3(tn.x, tn.y, tn.z);
 	}
 
+	std::vector<glm::vec3> tangent;
 
+	for(int i = 0; i < n.size(); i++) {
+		glm::vec3 T, C1, C2;
+
+		C1 = glm::cross(n[i], glm::vec3(0.0f, 0.0f, 1.0f));
+		C2 = glm::cross(n[i], glm::vec3(0.0f, 1.0f, 0.0f));
+
+		if(glm::length(C1) > glm::length(C2)) {
+			T = C1;
+		} else {
+			T = C2;
+		}
+
+		T = glm::normalize(T);
+
+		tangent.push_back(T);
+	}
+
+	/*
+	for(int i = 0; i < bt.size(); i++) {
+		glm::vec3 v1 = v[bt[i].t1.v1];
+		glm::vec3 v2 = v[bt[i].t1.v2];
+		glm::vec3 v3 = v[bt[i].t1.v3];
+
+		glm::vec2 t1 = t[bt[i].t2.v1];
+		glm::vec2 t2 = t[bt[i].t2.v2];
+		glm::vec2 t3 = t[bt[i].t2.v3];
+
+		glm::vec3 edge1 = v2 - v1;
+		glm::vec3 edge2 = v3 - v1;
+
+		float deltaU1 = t2.x - t1.x;
+		float deltaV1 = t2.y - t1.y;
+		float deltaU2 = t3.x - t1.x;
+		float deltaV2 = t3.y - t1.y;
+
+		float det = 1.0f / (deltaU1 * deltaV2 - deltaU2 * deltaV1);
+
+		std::cout << det << std::endl;
+
+		glm::vec3 _tangent;
+
+		_tangent.x = det * (deltaV2 * edge1.x - deltaV1 * edge2.x);
+		_tangent.x = det * (deltaV2 * edge1.y - deltaV1 * edge2.y);
+		_tangent.x = det * (deltaV2 * edge1.z - deltaV1 * edge2.z);
+
+		tangent[bt[i].t1.v1] += _tangent;
+		tangent[bt[i].t1.v2] += _tangent;
+		tangent[bt[i].t1.v3] += _tangent;
+	}
+
+	for(int i = 0; i < tangent.size(); i++) {
+		tangent[i] = glm::normalize(tangent[i]);
+	}
+	*/
 	std::vector<glm::vec3> vlist;
 	std::vector<glm::vec3> nlist;
 	std::vector<glm::vec2> tlist;
+	std::vector<glm::vec3> tangentList;
 
 	for(int i = 0; i < bt.size(); i++) {
 		vlist.push_back(v[bt[i].t1.v1]);
@@ -295,6 +351,9 @@ void StaticMesh::init(std::string fn) {
 		tlist.push_back(t[bt[i].t2.v1]);
 		tlist.push_back(t[bt[i].t2.v2]);
 		tlist.push_back(t[bt[i].t2.v3]);
+		tangentList.push_back(tangent[bt[i].t1.v1]);
+		tangentList.push_back(tangent[bt[i].t1.v2]);
+		tangentList.push_back(tangent[bt[i].t1.v3]);
 	}
 
 	this->size = vlist.size();
@@ -303,7 +362,7 @@ void StaticMesh::init(std::string fn) {
 
 	glBindVertexArray(this->vao);
 
-	glGenBuffers(3, this->vbo);
+	glGenBuffers(4, this->vbo);
 
 	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[0]);
 	glBufferData(GL_ARRAY_BUFFER, vlist.size() * sizeof(glm::vec3),&vlist[0],GL_STATIC_DRAW);
@@ -320,11 +379,17 @@ void StaticMesh::init(std::string fn) {
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(2);
 	
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[3]);
+	glBufferData(GL_ARRAY_BUFFER, tlist.size() * sizeof(glm::vec3), &tangentList[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(3);
+
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
+	glDisableVertexAttribArray(3);
 }
 
 void StaticMesh::render() {
@@ -356,10 +421,7 @@ void AnimatedMesh::init(std::string fn) {
 }
 
 void AnimatedMesh::render() {
-
 	this->updateVertexArray();
-
-
 }
 
 void AnimatedMesh::release() {
@@ -752,26 +814,48 @@ void Terrain::init(std::string fn) {
 		U = v[tris[i].v2] - v[tris[i].v1];
 		V = v[tris[i].v3] - v[tris[i].v1];
 
-
 		N = glm::cross(U, V);
 
 		N = glm::normalize(N);
 
-		n[tris[i].v1].addFaceNoraml(N);
-		n[tris[i].v2].addFaceNoraml(N);
-		n[tris[i].v3].addFaceNoraml(N);
+		n2[tris[i].v1] += N;
+		n2[tris[i].v2] += N;
+		n2[tris[i].v3] += N;
+	}
+
+	for(int i = 0; i < n2.size(); i++) {
+		n2[i] = glm::normalize(n2[i]);
+	}
+
+	std::vector<glm::vec3> tangent;
+	std::vector<glm::vec3> biTangent;
+
+	for(int i = 0; i < n.size(); i++) {
+		glm::vec3 T, C1, C2;
+
+		C1 = glm::cross(n2[i], glm::vec3(0.0f, 0.0f, 1.0f));
+		C2 = glm::cross(n2[i], glm::vec3(0.0f, 1.0f, 0.0f));
+
+		if(glm::length(C1) > glm::length(C2)) {
+			T = C1;
+		} else {
+			T = C2;
+		}
+
+		T = glm::normalize(T);
+
+		tangent.push_back(T);
 	}
 
 	for(int i = 0; i < n.size(); i++) {
-		n[i].generate();
-		n2[i] = n[i].vnormal;
+		biTangent.push_back(glm::normalize(glm::cross(tangent[i], n2[i])));
 	}
 
 	glGenVertexArrays(1, &this->vao);
 
 	glBindVertexArray(this->vao);
 
-	glGenBuffers(3, vbo);
+	glGenBuffers(5, vbo);
 	glGenBuffers(1, &this->ibo);
 
 
@@ -790,6 +874,16 @@ void Terrain::init(std::string fn) {
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(2);
 
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[3]);
+	glBufferData(GL_ARRAY_BUFFER, tangent.size() * sizeof(glm::vec3), &tangent[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(3);
+
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[4]);
+	glBufferData(GL_ARRAY_BUFFER, tangent.size() * sizeof(glm::vec3), &biTangent[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(4);
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, tris.size() * sizeof(Triangle), &tris[0], GL_STATIC_DRAW);
 
@@ -799,6 +893,8 @@ void Terrain::init(std::string fn) {
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
+	glDisableVertexAttribArray(3);
+	glDisableVertexAttribArray(4);
 }
 
 void Terrain::render() {
@@ -811,7 +907,7 @@ void Terrain::render() {
 
 void Terrain::release() {
 	glDeleteBuffers(1, &ibo);
-	glDeleteBuffers(3, vbo);
+	glDeleteBuffers(5, vbo);
 	glDeleteVertexArrays(1, &this->vao);
 	heights.clear();
 }
@@ -942,7 +1038,7 @@ void Renderer::init() {
 	// Init Shaders
 
 	// Create Scene Shader
-	scene.init("data/shaders/main.vert", "data/shaders/main.frag");
+	scene.init("data/shaders/test/main.vert", "data/shaders/test/main.frag");
 	scene.bind();
 	scene.createUniform("Projection");
 	scene.createUniform("View");
@@ -954,9 +1050,14 @@ void Renderer::init() {
 	scene.createUniform("CameraPosition");
 	scene.createUniform("tex0");
 	scene.setUniform1i("tex0", 0);
+	/*
 	scene.createUniform("reflectMap");
 	scene.setUniform1i("reflectMap", 1);
-
+	*/
+	scene.createUniform("normal0");
+	scene.setUniform1i("normal0", 1);
+	scene.createUniform("roughness0");
+	scene.setUniform1i("roughness0", 2);
 	// This is the lighting section
 	for(int i = 0; i < Renderer::LIGHT_SIZE; i++) {
 		this->createLight(i);

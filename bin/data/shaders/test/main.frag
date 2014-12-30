@@ -63,11 +63,14 @@ struct Material {
 	float reflectIndex;
 	float metal;
 };
-
+// Help with refraction
+uniform mat4 View;
 // Sampler main sampler for project
 uniform sampler2D tex0;
-// Reflective Sampler
-uniform samplerCube reflectMap;
+// Normal Map
+uniform sampler2D normal0;
+// Roughness Map
+uniform sampler2D roughness0;
 // Lights
 uniform Light lights[LIGHT_SIZE];
 // Material
@@ -79,12 +82,16 @@ out vec4 out_Color;
 in vec2 pass_TexCoord0;
 //in vec4 pass_Color;
 in vec3 pass_Normal;
+in vec3 pass_Tangent;
+//in vec3 pass_BiTangent;
 in vec3 pass_LightDir[LIGHT_SIZE];
 in vec3 pass_SpotDirection[LIGHT_SIZE];
 in vec3 pass_Viewer;
 // This is for reflectMap
+/*
 in vec3 pass_pos_eye;
 in vec3 pass_n_eye;
+*/
 
 // This is used to calculate the fresnel term
 float fresnel(vec3 v, vec3 h, float rn) {
@@ -127,6 +134,10 @@ float distr(vec3 h, vec3 n, float m) {
 	
 	float alpha = m * m;
 	
+	if(alpha == 0) {
+		alpha = 0.000001;
+	}
+	
 	float NdotHV2 = NdotHV * NdotHV;
 	
 	float NdotHV4 = NdotHV2 * NdotHV2;
@@ -165,8 +176,6 @@ float microfacet(vec3 l, vec3 v, vec3 n, float rough, float rn) {
 	
 	float F = fresnel(v, h, rn);
 	
-	//float D = ((a + 2.0) / (2.0*3.14)) * pow(NdotHV, a);
-	
 	// Distribution
 	float D = distr(h, n, rough);
 	
@@ -197,14 +206,6 @@ float diffuse(vec3 N, vec3 L, float energyConversion) {
 	return clamp(f1 / f2, 0.0f, 1.0f);
 }
 
-float fresnelReflection(vec3 v, vec3 l, float rn) {
-	vec3 h = normalize(l + v);
-	
-	float F = fresnel(v, h, rn);
-	
-	return F;
-}
-
 vec4 doLights2(int i, vec4 color, float dist, vec3 L) {
 	vec4 color2;
 	// Directional Light Calculation
@@ -217,9 +218,7 @@ vec4 doLights2(int i, vec4 color, float dist, vec3 L) {
 		
 		att *= att;
 		
-		//if(lights[i].range - dist > 0.0) {
-			color2 = clamp(color * att, 0.0, 1.0);
-		//}
+		color2 = clamp(color * att, 0.0, 1.0);
 		
 	// Spot Light Calculation
 	} else if(lights[i].type == LIGHT_SPOT) {
@@ -241,16 +240,21 @@ vec4 doLights2(int i, vec4 color, float dist, vec3 L) {
 	return color2;
 }
 
-vec4 doLights(int i, vec3 N, vec3 V, vec4 albedo) {
+vec4 doLights(int i, vec3 N, vec3 V, vec4 albedo, vec4 roughness_map) {
 	vec4 color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	
 	if(lights[i].enabled == LIGHT_ENABLED) {
 		vec3 L = normalize(pass_LightDir[i]);
 		
+		vec3 H = normalize(L + V);
+		
+		
 		float mf = microfacet(L, V, N, material.roughness, material.reflectIndex);
 		
-		vec3 diffuse = lights[i].diffuse * material.diffuse * albedo.xyz * diffuse(N, L, material.energyConserve);
-		vec3 specular = lights[i].specular * material.specular * albedo.xyz * mf;
+		vec3 c = albedo.xyz;
+		
+		vec3 diffuse = lights[i].diffuse * material.diffuse * c * diffuse(N, L, material.energyConserve);
+		vec3 specular = lights[i].specular * material.specular  * c * mf;
 		vec3 emission = material.emission;
 		
 		color = doLights2(i, vec4(diffuse + specular + emission, 1.0), length(pass_LightDir[i]), L);
@@ -258,37 +262,86 @@ vec4 doLights(int i, vec3 N, vec3 V, vec4 albedo) {
 	
 	return color;
 }
+/*
 
-// This takes care of the reflect map
+// This takes care of the reflect map and does reflections
 vec4 getReflectMap() {
 	vec3 incident_eye = normalize(pass_pos_eye);
 	vec3 normal = normalize(pass_n_eye);
 	
 	vec3 reflected = reflect(incident_eye, normal);
 	
-	return texture(reflectMap, reflected);
+	reflected = (inverse(View) * vec4(reflected, 0.0)).xyz;
+	
+	return texture(reflectMap, reflected * cos(3/3.14));
 }
+
+// This takes care of the reflect map and does refraction
+vec4 getRefractMap(float ratio) {
+	vec3 incident_eye = normalize(pass_pos_eye);
+	vec3 normal = normalize(pass_n_eye);
+	
+	vec3 refract = refract(incident_eye, normal, ratio);
+	
+	refract = (inverse(View) * vec4(refract, 0.0)).xyz;
+	
+	refract.y = -refract.y;
+	return texture(reflectMap, refract);
+}
+*/
+
+/*
+vec3 calcNormalMap() {
+	vec3 N = normalize(pass_Normal);
+	vec3 T = normalize(pass_Tangent);
+	
+	T = normalize(T - dot(T, N));
+	
+	vec3 B = cross(T, N);
+	
+	vec3 normalMap = texture(normal0, pass_TexCoord0).xyz;
+	
+	normalMap = 2.0 * normalMap - vec3(1.0);
+	
+	vec3 NN;
+	
+	mat3 TBN = mat3(T, B, N);
+	
+	NN = TBN * normalMap;
+	
+	NN = normalize(NN);
+	
+	return NN;
+}
+*/
 
 void main() {
 	// Setting to just white output for now
 	vec4 color;
+	//vec3 N = normalize(pass_Normal);
+	//vec3 N = normalize(texture2D(normal0, pass_TexCoord0).rgb * 2.0 - 1.0);
+	
 	vec3 N = normalize(pass_Normal);
+	
 	vec3 V = normalize(pass_Viewer);
 	vec4 albedo = texture(tex0, pass_TexCoord0);
+	vec4 roughness_map = texture(roughness0, pass_TexCoord0);
 	
 	color = vec4(1.0);
 	
 	vec4 lightColors[LIGHT_SIZE];
 	
 	for(int i = 0; i < LIGHT_SIZE; i++) {
-		lightColors[i] = doLights(i, N, V, albedo);
+		lightColors[i] = doLights(i, N, V, albedo, roughness_map);
 	}
 	
 	vec4 finalLightColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	
 	for(int i = 0; i < LIGHT_SIZE; i++) {
-		finalLightColor = clamp(lightColors[i] + finalLightColor, 0.0, 1.0);
+		finalLightColor += lightColors[i];
 	}
+	
+	finalLightColor = clamp(finalLightColor, 0.0, 1.0);
 	
 	vec3 gamma = vec3(1.0/2.2);
 	
