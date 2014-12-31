@@ -370,9 +370,16 @@ void StaticMesh::init(std::string fn) {
 	glEnableVertexAttribArray(0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[1]);
-	glBufferData(GL_ARRAY_BUFFER, nlist.size() * sizeof(glm::vec3), &nlist[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBufferData(GL_ARRAY_BUFFER, tlist.size() * sizeof(glm::vec2), &tlist[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[2]);
+	glBufferData(GL_ARRAY_BUFFER, nlist.size() * sizeof(glm::vec3), &nlist[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(2);
+	/*
+
 
 	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[2]);
 	glBufferData(GL_ARRAY_BUFFER, tlist.size() * sizeof(glm::vec2), &tlist[0], GL_STATIC_DRAW);
@@ -383,13 +390,17 @@ void StaticMesh::init(std::string fn) {
 	glBufferData(GL_ARRAY_BUFFER, tlist.size() * sizeof(glm::vec3), &tangentList[0], GL_STATIC_DRAW);
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(3);
+	*/
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
+	/*
+	
 	glDisableVertexAttribArray(3);
+	*/
 }
 
 void StaticMesh::render() {
@@ -865,6 +876,17 @@ void Terrain::init(std::string fn) {
 	glEnableVertexAttribArray(0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[1]);
+	glBufferData(GL_ARRAY_BUFFER, t.size() * sizeof(glm::vec2), &t[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[2]);
+	glBufferData(GL_ARRAY_BUFFER, n2.size() * sizeof(glm::vec3), &n2[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(2);
+
+	/*
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[1]);
 	glBufferData(GL_ARRAY_BUFFER, n2.size() * sizeof(glm::vec3), &n2[0], GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(1);
@@ -883,6 +905,7 @@ void Terrain::init(std::string fn) {
 	glBufferData(GL_ARRAY_BUFFER, tangent.size() * sizeof(glm::vec3), &biTangent[0], GL_STATIC_DRAW);
 	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(4);
+	*/
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, tris.size() * sizeof(Triangle), &tris[0], GL_STATIC_DRAW);
@@ -891,10 +914,13 @@ void Terrain::init(std::string fn) {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glDisableVertexAttribArray(0);
+	
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
+	/*
 	glDisableVertexAttribArray(3);
 	glDisableVertexAttribArray(4);
+	*/
 }
 
 void Terrain::render() {
@@ -1008,6 +1034,27 @@ void Camera::setRot(glm::vec2 r) {
 	this->rot = r;
 }
 
+glm::vec3 Camera::getDirection() {
+	return glm::vec3(view[0][2], view[1][2], view[2][2]);
+}
+
+// Material
+void Material::init(std::string albedofn) {
+	albedo.init(albedofn);
+}
+
+void Material::bind() {
+	albedo.bind(GL_TEXTURE0);
+}
+
+void Material::unbind() {
+	albedo.unbind();
+}
+
+void Material::release() {
+	albedo.release();
+}
+
 // Renderer
 Renderer* Renderer::instance = 0;
 
@@ -1048,12 +1095,25 @@ void Renderer::init() {
 	glm::mat4 tm = glm::scale(glm::vec3(-1.0f, 1.0f, 1.0f)) * glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	scene.setUniformMatrix4f("TextureMatrix", tm);
 	scene.createUniform("CameraPosition");
+
 	scene.createUniform("tex0");
 	scene.setUniform1i("tex0", 0);
+
+	for(int i = 0; i < 8; i++) {
+		this->createLight(i);
+	}
+
 	/*
-	scene.createUniform("reflectMap");
-	scene.setUniform1i("reflectMap", 1);
-	*/
+	scene.createUniform("Projection");
+	scene.createUniform("View");
+	scene.createUniform("Model");
+	scene.createUniform("Normal");
+	scene.createUniform("TextureMatrix");
+	glm::mat4 tm = glm::scale(glm::vec3(-1.0f, 1.0f, 1.0f)) * glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	scene.setUniformMatrix4f("TextureMatrix", tm);
+	scene.createUniform("CameraPosition");
+	scene.createUniform("tex0");
+	scene.setUniform1i("tex0", 0);
 	scene.createUniform("normal0");
 	scene.setUniform1i("normal0", 1);
 	scene.createUniform("roughness0");
@@ -1063,6 +1123,7 @@ void Renderer::init() {
 		this->createLight(i);
 	}
 	this->createMaterial();
+	*/
 
 	scene.unbind();
 
@@ -1150,81 +1211,85 @@ void Renderer::setCamera(Camera& cam) {
 	} // UI doesn't make any since
 }
 
-void Renderer::setLight(Renderer::Lights light, Light& l) {
+void Renderer::setLight(Renderer::Lights lts, Light& l) {
+
 	if(this->shaderType == Renderer::SCENE) {
 		std::stringstream ss;
 		std::stringstream ss2;
-		ss << "lights[" << light << "]";
+		ss << "lights[" << lts << "]";
 		ss2 << ss.str() << ".enabled";
 		scene.setUniform1i(ss2.str(), l.enabled);
-		ss2.str(std::string());
+		ss2.str("");
 		ss2 << ss.str() << ".type";
 		scene.setUniform1i(ss2.str(), l.type);
-		ss2.str(std::string());
+		ss2.str("");
 		ss2 << ss.str() << ".position";
 		scene.setUniform3f(ss2.str(), l.position);
-		ss2.str(std::string());
+		ss2.str("");
+		ss2 << ss.str() << ".ambient";
+		scene.setUniform3f(ss2.str(), l.ambient);
+		ss2.str("");
 		ss2 << ss.str() << ".diffuse";
 		scene.setUniform3f(ss2.str(), l.diffuse);
-		ss2.str(std::string());
+		ss2.str("");
 		ss2 << ss.str() << ".specular";
 		scene.setUniform3f(ss2.str(), l.specular);
-		ss2.str(std::string());
-		ss2 << ss.str() << ".range";
-		scene.setUniform1f(ss2.str(), l.range);
-		ss2.str(std::string());
+		ss2.str("");
+		ss2 << ss.str() << ".radius";
+		scene.setUniform1f(ss2.str(), l.radius);
+		ss2.str("");
 		ss2 << ss.str() << ".spotDirection";
 		scene.setUniform3f(ss2.str(), l.spotDirection);
-		ss2.str(std::string());
+		ss2.str("");
 		ss2 << ss.str() << ".spotExp";
 		scene.setUniform1f(ss2.str(), l.spotExp);
-		ss2.str(std::string());
-		ss2 << ss.str() << ".spotCutOff";
-		scene.setUniform1f(ss2.str(), l.spotCutOff);
-		ss2.str(std::string());
-		ss2 << ss.str() << ".attenuation";
-		scene.setUniform1f(ss2.str(), l.attenuation);
+		ss2.str("");
+		ss2 << ss.str() << ".roughness";
+		scene.setUniform1f(ss2.str(), l.roughness);
+		ss2.str("");
 	}
 }
 
 void Renderer::createLight(int i) {
+
 	std::stringstream ss;
-	ss << "lights[" << i << "]";
 	std::stringstream ss2;
+
+	ss << "lights[" << i << "]";
 	ss2 << ss.str() << ".enabled";
 	scene.createUniform(ss2.str());
-	scene.setUniform1i(ss2.str(), 0);
-	ss2.str(std::string());
+	ss2.str("");
 	ss2 << ss.str() << ".type";
 	scene.createUniform(ss2.str());
-	scene.setUniform1i(ss2.str(), 0);
-	ss2.str(std::string());
+	ss2.str("");
 	ss2 << ss.str() << ".position";
 	scene.createUniform(ss2.str());
-	ss2.str(std::string());
+	ss2.str("");
+	ss2 << ss.str() << ".ambient";
+	scene.createUniform(ss2.str());
+	ss2.str("");
 	ss2 << ss.str() << ".diffuse";
 	scene.createUniform(ss2.str());
-	ss2.str(std::string());
+	ss2.str("");
 	ss2 << ss.str() << ".specular";
 	scene.createUniform(ss2.str());
-	ss2.str(std::string());
-	ss2 << ss.str() << ".range";
+	ss2.str("");
+	ss2 << ss.str() << ".radius";
 	scene.createUniform(ss2.str());
-	ss2.str(std::string());
+	ss2.str("");
 	ss2 << ss.str() << ".spotDirection";
 	scene.createUniform(ss2.str());
-	ss2.str(std::string());
+	ss2.str("");
 	ss2 << ss.str() << ".spotExp";
 	scene.createUniform(ss2.str());
-	ss2.str(std::string());
-	ss2 << ss.str() << ".spotCutOff";
+	ss2.str("");
+	ss2 << ss.str() << ".roughness";
 	scene.createUniform(ss2.str());
-	ss2.str(std::string());
-	ss2 << ss.str() << ".attenuation";
-	scene.createUniform(ss2.str());
+	ss2.str("");
 }
 
 void Renderer::createMaterial() {
+	/*
 	std::stringstream ss;
 	std::stringstream ss2;
 	ss << "material";
@@ -1249,9 +1314,11 @@ void Renderer::createMaterial() {
 	ss2 << ss.str() << ".metal";
 	scene.createUniform(ss2.str());
 	ss2.str("");
+	*/
 }
 
 void Renderer::setMaterial(Material& m) {
+	/*
 	std::stringstream ss;
 	std::stringstream ss2;
 	ss << "material";
@@ -1276,4 +1343,5 @@ void Renderer::setMaterial(Material& m) {
 	ss2 << ss.str() << ".metal";
 	scene.setUniform1f(ss2.str(), m.metal);
 	ss2.str("");
+	*/
 }

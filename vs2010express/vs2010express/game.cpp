@@ -59,6 +59,7 @@ void Game::init() {
 		"data/skybox/land2/south.png",
 		"data/skybox/land2/north.png");
 		*/
+
 	normal_map.init("data/texture/dirt0_normal.png");
 	this->roughness_map.init("data/texture/dirt0_roughness.png");
 
@@ -74,47 +75,61 @@ void Game::init() {
 
 	this->yrot = 0.0f;
 
+	/*
+	light0.enabled = 1;
+	light0.type = Renderer::SPOT;
+	light0.position = glm::vec3(40.0, 40.0, 0.0);
+	light0.ambient = glm::vec3(0.1, 0.1, 0.1);
+	light0.diffuse = glm::vec3(1.0, 1.0, 1.0);
+	light0.specular = glm::vec3(1.0, 1.0, 1.0);
+	light0.roughness = 1.0f;
+	light0.radius = 1.5;
+	light0.spotDirection = glm::vec3(-0.5, -0.5, -0.5);
+	light0.spotExp = 4.0f;
+	*/
 
+	
 	light0.enabled = 1;
 	light0.type = Renderer::DIRECTION;
 	light0.position = glm::vec3(-0.5, -0.5, 0.0);
 	light0.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
 	light0.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+	light0.roughness = 1.0;
 
 	light1.enabled = 0;
 	light1.type = Renderer::POINT;
 	light1.position = glm::vec3(3.0f, 5.0f, 20.0f);
 	light1.diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
 	light1.specular = glm::vec3(1.0f, 0.0f, 0.0f);
-	light1.range = 25.0f;
-	light1.attenuation = 0.1f;
+	light1.roughness = 0.0;
+	light1.radius = 3.0;
 
 	light2.enabled = 0;
 	light2.type = Renderer::POINT;
 	light2.position = glm::vec3(-3.0f, 5.0f, 20.0f);
 	light2.diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
 	light2.specular = glm::vec3(0.0f, 1.0f, 0.0f);
-	light2.range = 25.0f;
-	light2.attenuation = 0.1f;
-
+	light2.roughness = 0.0;
+	light2.radius = 3.0;
+	
 	light3.enabled = 0;
 	light3.type = Renderer::POINT;
 	light3.position = glm::vec3(0.0f, 5.0f, 17.0f);
 	light3.diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
 	light3.specular = glm::vec3(0.0f, 0.0f, 1.0f);
-	light3.range = 25.0f;
-	light3.attenuation = 0.1f;
-
+	light3.roughness = 0.0;
+	light3.radius = 3.0;
+	
 	light4.enabled = 0;
 	light4.type = Renderer::SPOT;
 	light4.position = glm::vec3(0.0f, 5.0f, 8.0f);
 	light4.diffuse = glm::vec3(1.0f, 0.0f, 1.0f);
 	light4.specular = glm::vec3(1.0f, 0.0f, 1.0f);
-	light4.spotCutOff = 128.0f;
-	light4.spotExp = 2.0f;
 	light4.spotDirection = glm::vec3(0.0f, -0.5f, -0.5f);
-	light4.attenuation = 0.1f;
-
+	light4.spotExp = 1.0f;
+	light4.roughness = 0.0;
+	light4.radius = 3.0;
+	
 	def.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
 	def.specular = glm::vec3(1.0f, 1.0f, 1.0f);
 	def.emission = glm::vec3(0.0);
@@ -197,28 +212,30 @@ void Game::update() {
 
 	rend->setMaterial(this->tests[this->test_index]);
 
-	this->testTex3.bind();
+	//this->testTex3.bind();
 
 	//reflectMap.bind(GL_TEXTURE1);
+	/*
 	normal_map.bind(GL_TEXTURE1);
 	roughness_map.bind(GL_TEXTURE2);
-
+	*/
 	m = glm::translate(glm::vec3(0.0f, 2.0f, -5.0f)) *
 				  glm::rotate(yrot, glm::vec3(1.0f, 1.0f, 1.0f));
 
+
 	rend->setModel(m);
 
-	//testTex.bind();
+	testTex.bind();
 
 	this->test.render();
 
-	//testTex.unbind();
+	testTex.unbind();
 
 	m = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	rend->setModel(m);
 
-	//testTex2.bind();
+	testTex2.bind();
 
 	this->terrain.render();
 
@@ -226,32 +243,32 @@ void Game::update() {
 
 	rend->setModel(m);
 
-	//testTex2.unbind();
+	testTex2.unbind();
 
-	//playerTex.bind();
+	playerTex.bind();
 
 	this->player.render();
 
-	//playerTex.unbind();
+	playerTex.unbind();
 
 	m = glm::translate(glm::vec3(0.0f, 0.0f, 18.0f));
 
 	rend->setModel(m);
 
-	//testTex3.bind();
+	testTex3.bind();
 	this->sphere.render();
-	//testTex3.unbind();
+	testTex3.unbind();
 
 	m = glm::translate(glm::vec3(18.0f, 0.0f, 18.0f));
 
 	rend->setModel(m);
 
-	//sand.bind();
+	sand.bind();
 	this->monkey.render();
-	//sand.unbind();
+	sand.unbind();
 
 	glm::vec3 loc(0.0f, 30.0f, -20);
-	/*
+	
 	for(int i = 0; i < 10; i++) {
 		this->renderSphere(loc, this->tests[i], silver);
 		loc.z += 5.0f;
@@ -272,10 +289,12 @@ void Game::update() {
 		this->renderSphere(loc, this->tests[i], gold);
 		loc.z += 5.0f;
 	}
-	*/
+
+	/*
 	normal_map.unbind();
 	roughness_map.unbind();
 	testTex3.unbind();
+	*/
 
 	//reflectMap.unbind();
 

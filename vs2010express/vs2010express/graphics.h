@@ -64,21 +64,22 @@ struct Light {
 	int enabled;
 	int type;
 	glm::vec3 position;
+	glm::vec3 ambient;
 	glm::vec3 diffuse;
 	glm::vec3 specular;
-	// Point Light stuff
-	float range; // This is decreprecated
-	// Spot Light Specific Stuff
+	float radius;
 	glm::vec3 spotDirection;
 	float spotExp;
-	float spotCutOff;
-	// Attention
-	float attenuation;
+	float roughness; // value between [0.0, 1.0] this will be moved to material
 };
+
+
 
 /*
 	Material
 */
+
+/*
 struct Material {
 	glm::vec3 diffuse;
 	glm::vec3 specular;
@@ -88,6 +89,7 @@ struct Material {
 	float energyConserve;
 	float metal;
 };
+*/
 
 /*
 	Shader
@@ -406,6 +408,22 @@ public:
 
 	void setRot(glm::vec2 r);
 
+	glm::vec3 getDirection();
+
+};
+
+
+class Material {
+	Texture albedo;
+public:
+
+	void init(std::string albedofn);
+
+	void bind();
+
+	void unbind();
+
+	void release();
 };
 
 /*
@@ -485,7 +503,7 @@ public:
 
 	void setCamera(Camera& cam);
 
-	void setLight(Renderer::Lights lights, Light& l);
+	void setLight(Renderer::Lights lts, Light& l);
 
 	void setMaterial(Material& m);
 
