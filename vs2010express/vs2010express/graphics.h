@@ -70,26 +70,8 @@ struct Light {
 	float radius;
 	glm::vec3 spotDirection;
 	float spotExp;
-	float roughness; // value between [0.0, 1.0] this will be moved to material
+	float intensity;
 };
-
-
-
-/*
-	Material
-*/
-
-/*
-struct Material {
-	glm::vec3 diffuse;
-	glm::vec3 specular;
-	glm::vec3 emission;
-	float reflectIndex;
-	float roughness;
-	float energyConserve;
-	float metal;
-};
-*/
 
 /*
 	Shader
@@ -271,7 +253,7 @@ public:
 
 	Texture();
 
-	void init(std::string fn);
+	void init(std::string fn, bool mipmaps = true);
 
 	void bind(int tt = GL_TEXTURE0);
 
@@ -356,7 +338,7 @@ class Terrain {
 
 	GLuint vao;
 
-	GLuint vbo[5];
+	GLuint vbo[4];
 	GLuint ibo;
 
 	Uint32 count;
@@ -415,9 +397,18 @@ public:
 
 class Material {
 	Texture albedo;
+	Texture normal;
+	Texture specular;
+	Texture emissive;
+	Texture alphaMask;
 public:
 
-	void init(std::string albedofn);
+	void init(
+		std::string albedofn, 
+		std::string normalfn = "data/texture/def_normal.png",
+		std::string specularfn = "data/texture/def_specular.png",
+		std::string emissivefn = "data/texture/def_emissive.png",
+		std::string alphaMask = "data/texture/def_alphaMask.png");
 
 	void bind();
 
@@ -504,8 +495,6 @@ public:
 	void setCamera(Camera& cam);
 
 	void setLight(Renderer::Lights lts, Light& l);
-
-	void setMaterial(Material& m);
 
 };
 

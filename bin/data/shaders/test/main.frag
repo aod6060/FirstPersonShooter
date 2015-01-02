@@ -43,11 +43,15 @@ struct Light {
 	float radius; // For attention
 	vec3 spotDirection; // Spot light ra
 	float spotExp;
-	float roughness; // Temp values for now
+	float intensity;
 };
 
 struct Material {
 	sampler2D albedo;
+	sampler2D normal;
+	sampler2D specular;
+	sampler2D emissive;
+	sampler2D alphaMask;
 };
 
 // Uniforms
@@ -65,9 +69,29 @@ out vec4 out_Color;
 // pass
 in vec2 pass_TexCoord0;
 in vec3 pass_Normal;
+in vec3 pass_Tangent;
 in vec3 pass_Viewer;
 in vec3 pass_LightPosition[LIGHTS_SIZE];
 in vec3 pass_SpotDirection[LIGHTS_SIZE];
+in vec3 pass_SelfPosition;
+
+// Function Declarations
+vec3 lightTypes(int i, vec3 color, float dist, vec3 L, vec3 H);
+float energyCon(float NdotL, float ec);
+vec4 lighting();
+vec3 calcNormalMap();
+void alphaMasking();
+
+void main() {
+	vec4 lightColor = lighting();
+	
+	// Do Gamma correction
+	vec3 gamma = vec3(1.0 / 2.2);
+	
+	alphaMasking();
+	
+	out_Color = vec4(pow(lightColor.xyz, gamma), 1.0); // Make everything green
+}
 
 vec3 lightTypes(int i, vec3 color, float dist, vec3 L, vec3 H) {
 	vec3 color2;
@@ -115,12 +139,14 @@ vec4 lighting() {
 	vec4 color = vec4(0.0);
 	color.w = 1.0;
 	
-	vec3 N = normalize(pass_Normal);
+	vec3 N = calcNormalMap();
 	vec3 V = normalize(pass_Viewer);
 	
 	float pi = 3.14;
 	
 	vec3 albedo = texture(material.albedo, pass_TexCoord0).xyz;
+	vec3 specularMap = texture(material.specular, pass_TexCoord0).xyz;
+	vec3 emissiveMap = texture(material.emissive, pass_TexCoord0).xyz;
 	
 	for(int i = 0; i < LIGHTS_SIZE; i++) {
 	
@@ -133,31 +159,56 @@ vec4 lighting() {
 			float NdotL = max(dot(N, L), 0.0);
 			float NdotH = max(dot(N, H), 0.0);
 			
-			float power = (lights[i].roughness * lights[i].roughness) * 256.0f;
+			float power = (lights[i].intensity) * 256.0f;
 			
-			float blinnPhong = ((power + 8.0) / (8.0 * pi)) * pow(NdotH, power);
+			float blinnPhong = ((power + 2.0) / (2.0 * pi)) * pow(NdotH, power);
 			// Using Labertion diffuse lighting
-			vec3 diffuse = lights[i].diffuse * albedo * NdotL / pi;
+			vec3 diffuse = lights[i].diffuse * albedo * NdotL;
 			
-			vec3 specular = lights[i].specular * albedo * blinnPhong;
+			vec3 specular = lights[i].specular * albedo * specularMap * blinnPhong;
 			
-			color += vec4(lightTypes(i, ambient + diffuse + specular, length(L), L, H), 1.0);
+			color += vec4(lightTypes(i,ambient + diffuse + specular, length(L), L, H), 1.0);
 		}
 	}
+	
+	float NdotLem = max(dot(N, normalize(pass_SelfPosition)), 0.0);
+	
+	vec3 selfLit = emissiveMap * albedo;
+	
+	color += vec4(selfLit, 1.0);
+	
 	
 	return color;
 }
 
-void main() {
-	vec4 lightColor = lighting();
+void alphaMasking() {
+	vec4 am = texture(material.alphaMask, pass_TexCoord0);
 	
-	// Do Gamma correction
-	vec3 gamma = vec3(1.0 / 2.2);
-	
-	out_Color = vec4(pow(lightColor.xyz, gamma), 1.0); // Make everything green
+	if(am.r == 0.0) {
+		discard;
+	}
 }
 
-
-
-
-
+vec3 calcNormalMap() {
+	vec3 N = normalize(pass_Normal);
+	
+	vec3 T = normalize(pass_Tangent);
+	
+	T = normalize(T - dot(T, N));
+	
+	vec3 B = cross(T, N);
+	
+	vec3 normal = texture(material.normal, pass_TexCoord0).xyz;
+	
+	normal = 2.0 * normal - vec3(1.0);
+	
+	vec3 NN;
+	
+	mat3 TBN = mat3(T, B, N);
+	
+	NN = TBN * normal;
+	
+	NN = normalize(NN);
+	
+	return NN;
+}

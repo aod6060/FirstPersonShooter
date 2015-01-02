@@ -37,31 +37,51 @@ void Game::init() {
 	this->test.init("data/mesh/cube.smesh");
 	player.init("data/mesh/player.smesh");
 
-	this->testTex.init("data/texture/grass0.png");
-	testTex2.init("data/texture/grass1.png");
-	playerTex.init("data/texture/player.png");
+	testMat.init("data/texture/grass0.png",
+				 "data/texture/grass0_normal.png",
+				 "data/texture/grass0_specular.png");
+
+	testMat2.init("data/texture/grass1.png",
+				  "data/texture/grass1_normal.png",
+				  "data/texture/grass1_specular.png");
+
+	playerMat.init("data/texture/player.png");
 	
 	this->sphere.init("data/mesh/sphere.smesh");
-	testTex3.init("data/texture/dirt0.png");
+
+	testMat3.init("data/texture/dirt0.png",
+				  "data/texture/dirt0_normal.png",
+				  "data/texture/dirt0_specular.png");
 
 	monkey.init("data/mesh/monkey.smesh");
-	sand.init("data/texture/sand0.png");
 
-	silver.init("data/texture/silver.png");
-	gold.init("data/texture/gold.png");
-	copper.init("data/texture/copper.png");
-	/*
-	reflectMap.init(
-		"data/skybox/land2/east.png",
-		"data/skybox/land2/west.png",
-		"data/skybox/land2/up.png",
-		"data/skybox/land2/down.png",
-		"data/skybox/land2/south.png",
-		"data/skybox/land2/north.png");
-		*/
+	sand.init("data/texture/sand0.png",
+			  "data/texture/sand0_normal.png",
+			  "data/texture/sand0_specular.png");
 
-	normal_map.init("data/texture/dirt0_normal.png");
-	this->roughness_map.init("data/texture/dirt0_roughness.png");
+	silver.init("data/texture/silver.png",
+				"data/texture/def_normal.png",
+				"data/texture/roughness.png");
+
+	gold.init("data/texture/gold.png",
+			  "data/texture/def_normal.png",
+			  "data/texture/roughness.png");
+
+	copper.init("data/texture/copper.png",				
+				"data/texture/def_normal.png",
+				"data/texture/roughness.png");
+
+	
+	emTest.init("data/texture/test.png",
+				"data/texture/def_normal.png",
+				"data/texture/def_specular.png",
+				"data/texture/test_emissive.png");
+
+	alphaTest.init("data/texture/test.png",
+				   "data/texture/def_normal.png",
+				   "data/texture/def_specular.png",
+				   "data/texture/def_emissive.png",
+				   "data/texture/alphaTest.png");
 
 	this->terrain.init("data/heightmap/heightmap1.png");
 
@@ -94,32 +114,32 @@ void Game::init() {
 	light0.position = glm::vec3(-0.5, -0.5, 0.0);
 	light0.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
 	light0.specular = glm::vec3(1.0f, 1.0f, 1.0f);
-	light0.roughness = 1.0;
+	light0.intensity = 0.1f;
 
 	light1.enabled = 0;
 	light1.type = Renderer::POINT;
 	light1.position = glm::vec3(3.0f, 5.0f, 20.0f);
 	light1.diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
 	light1.specular = glm::vec3(1.0f, 0.0f, 0.0f);
-	light1.roughness = 0.0;
 	light1.radius = 3.0;
+	light1.intensity = 1.0f;
 
 	light2.enabled = 0;
 	light2.type = Renderer::POINT;
 	light2.position = glm::vec3(-3.0f, 5.0f, 20.0f);
 	light2.diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
 	light2.specular = glm::vec3(0.0f, 1.0f, 0.0f);
-	light2.roughness = 0.0;
 	light2.radius = 3.0;
-	
+	light2.intensity = 1.0f;
+
 	light3.enabled = 0;
 	light3.type = Renderer::POINT;
 	light3.position = glm::vec3(0.0f, 5.0f, 17.0f);
 	light3.diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
 	light3.specular = glm::vec3(0.0f, 0.0f, 1.0f);
-	light3.roughness = 0.0;
 	light3.radius = 3.0;
-	
+	light3.intensity = 1.0f;
+
 	light4.enabled = 0;
 	light4.type = Renderer::SPOT;
 	light4.position = glm::vec3(0.0f, 5.0f, 8.0f);
@@ -127,38 +147,8 @@ void Game::init() {
 	light4.specular = glm::vec3(1.0f, 0.0f, 1.0f);
 	light4.spotDirection = glm::vec3(0.0f, -0.5f, -0.5f);
 	light4.spotExp = 1.0f;
-	light4.roughness = 0.0;
 	light4.radius = 3.0;
-	
-	def.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-	def.specular = glm::vec3(1.0f, 1.0f, 1.0f);
-	def.emission = glm::vec3(0.0);
-	def.roughness = 1.0f;
-	def.reflectIndex = 1.0f;
-	def.energyConserve = 0.3f;
-
-
-	float ri = 1.0f;
-	float r = 1.0f;
-	float ec = 0.0f;
-	float metal = 0.0f;
-
-	for(int i = 0; i < 10; i++) {
-		this->createMaterial(
-			this->tests[i],
-			glm::vec3(1.0),
-			glm::vec3(1.0),
-			glm::vec3(0.0),
-			ri,
-			r,
-			ec,
-			metal);
-
-		ri -= 0.1;
-		r -= 0.1;
-		ec += 0.1;
-		metal += 0.1;
-	}
+	light4.intensity = 1.0f;
 }
 	
 void Game::update() {
@@ -189,6 +179,26 @@ void Game::update() {
 		}
 	}
 
+	if(wm->keyHit(SDL_SCANCODE_1)) {
+		light0.enabled = !light0.enabled;
+	}
+
+	if(wm->keyHit(SDL_SCANCODE_2)) {
+		light1.enabled = !light1.enabled;
+	}
+
+	if(wm->keyHit(SDL_SCANCODE_3)) {
+		light2.enabled = !light2.enabled;
+	}
+
+	if(wm->keyHit(SDL_SCANCODE_4)) {
+		light3.enabled = !light3.enabled;
+	}
+
+	if(wm->keyHit(SDL_SCANCODE_5)) {
+		light4.enabled = !light4.enabled;
+	}
+
 	this->yrot += 1.0f / (1000 / 60);
 
 	if(yrot > 360.0f) {
@@ -210,32 +220,23 @@ void Game::update() {
 	rend->setLight(Renderer::LIGHT3, this->light3);
 	rend->setLight(Renderer::LIGHT4, this->light4);
 
-	rend->setMaterial(this->tests[this->test_index]);
-
-	//this->testTex3.bind();
-
-	//reflectMap.bind(GL_TEXTURE1);
-	/*
-	normal_map.bind(GL_TEXTURE1);
-	roughness_map.bind(GL_TEXTURE2);
-	*/
 	m = glm::translate(glm::vec3(0.0f, 2.0f, -5.0f)) *
 				  glm::rotate(yrot, glm::vec3(1.0f, 1.0f, 1.0f));
 
 
 	rend->setModel(m);
 
-	testTex.bind();
+	testMat.bind();
 
 	this->test.render();
 
-	testTex.unbind();
+	testMat.unbind();
 
 	m = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	rend->setModel(m);
 
-	testTex2.bind();
+	testMat2.bind();
 
 	this->terrain.render();
 
@@ -243,21 +244,21 @@ void Game::update() {
 
 	rend->setModel(m);
 
-	testTex2.unbind();
+	testMat2.unbind();
 
-	playerTex.bind();
+	playerMat.bind();
 
 	this->player.render();
 
-	playerTex.unbind();
+	playerMat.unbind();
 
 	m = glm::translate(glm::vec3(0.0f, 0.0f, 18.0f));
 
 	rend->setModel(m);
 
-	testTex3.bind();
+	testMat3.bind();
 	this->sphere.render();
-	testTex3.unbind();
+	testMat3.unbind();
 
 	m = glm::translate(glm::vec3(18.0f, 0.0f, 18.0f));
 
@@ -270,7 +271,7 @@ void Game::update() {
 	glm::vec3 loc(0.0f, 30.0f, -20);
 	
 	for(int i = 0; i < 10; i++) {
-		this->renderSphere(loc, this->tests[i], silver);
+		this->renderSphere(loc, silver);
 		loc.z += 5.0f;
 	}
 
@@ -278,7 +279,7 @@ void Game::update() {
 	loc.z = -20.0;
 
 	for(int i = 0; i < 10; i++) {
-		this->renderSphere(loc, this->tests[i], copper);
+		this->renderSphere(loc, copper);
 		loc.z += 5.0f;
 	}
 
@@ -286,17 +287,26 @@ void Game::update() {
 	loc.z = -20.0;
 
 	for(int i = 0; i < 10; i++) {
-		this->renderSphere(loc, this->tests[i], gold);
+		this->renderSphere(loc, gold);
 		loc.z += 5.0f;
 	}
 
-	/*
-	normal_map.unbind();
-	roughness_map.unbind();
-	testTex3.unbind();
-	*/
+	m = glm::translate(glm::vec3(0.0f, 2.0f, 30.0f));
 
-	//reflectMap.unbind();
+	rend->setModel(m);
+
+	emTest.bind();
+	test.render();
+	emTest.unbind();
+
+
+	m = glm::translate(glm::vec3(4.0f, 2.0f, 30.0f));
+
+	rend->setModel(m);
+
+	alphaTest.bind();
+	test.render();
+	alphaTest.unbind();
 
 	rend->endShader(Renderer::SCENE);
 
@@ -320,17 +330,14 @@ void Game::update() {
 void Game::release() {
 	terrain.release();
 	font.release();
-	playerTex.release();
+	playerMat.release();
 	copper.release();
 	gold.release();
 	silver.release();
-	normal_map.release();
-	roughness_map.release();
-	//reflectMap.release();
 	sand.release();
-	testTex3.release();
-	testTex2.release();
-	testTex.release();
+	testMat3.release();
+	testMat2.release();
+	testMat.release();
 	monkey.release();
 	sphere.release();
 	test.release();
@@ -338,28 +345,16 @@ void Game::release() {
 	Renderer::getInstance()->release();
 }
 
-void Game::renderSphere(glm::vec3 location, Material& material, Texture& tex) {
+void Game::renderSphere(glm::vec3 location, Material& material) {
 	Renderer* rend = Renderer::getInstance();
 	
 	glm::mat4 m = glm::translate(location);
 
-	rend->setMaterial(material);
-
 	rend->setModel(m);
 
-	tex.bind();
+	material.bind();
 
 	sphere.render();
 
-	tex.unbind();
-}
-
-void Game::createMaterial(Material& m, glm::vec3 d, glm::vec3 s, glm::vec3 e, float ri, float r, float ec, float metal) {
-	m.diffuse = d;
-	m.specular = s;
-	m.emission = e;
-	m.reflectIndex = ri;
-	m.roughness = r;
-	m.energyConserve = ec;
-	m.metal = metal;
+	material.unbind();
 }

@@ -45,7 +45,7 @@ struct Light {
 	float radius; // For attention
 	vec3 spotDirection; // Spot light ra
 	float spotExp;
-	float roughness; // Temp values for now
+	float intensity;
 };
 
 // Uniforms
@@ -55,6 +55,7 @@ uniform mat4 Model;
 uniform mat4 Normal;
 uniform mat4 TextureMatrix;
 uniform vec3 CameraPosition;
+uniform vec3 SelfPosition;
 // Lighting
 uniform Light lights[LIGHTS_SIZE];
 
@@ -62,13 +63,30 @@ uniform Light lights[LIGHTS_SIZE];
 layout(location = 0) in vec3 in_Vertex;
 layout(location = 1) in vec2 in_TexCoord0;
 layout(location = 2) in vec3 in_Normal;
+layout(location = 3) in vec3 in_Tangent;
 
 // passes
 out vec2 pass_TexCoord0;
 out vec3 pass_Normal;
+out vec3 pass_Tangent;
 out vec3 pass_Viewer;
 out vec3 pass_LightPosition[LIGHTS_SIZE];
 out vec3 pass_SpotDirection[LIGHTS_SIZE];
+out vec3 pass_SelfPosition;
+
+// Function Declareations
+void setLight(int i, vec3 posW);
+void lighting();
+
+void main() {
+	// Project vertex to clip space
+	gl_Position = Projection * View * Model * vec4(in_Vertex, 1.0);
+	
+	pass_TexCoord0 = (TextureMatrix * vec4(in_TexCoord0, 1.0, 0.0)).xy;
+	
+	lighting();
+}
+
 
 void setLight(int i, vec3 posW) {
 	if(lights[i].type == LIGHT_DIRECTION) {
@@ -83,23 +101,17 @@ void setLight(int i, vec3 posW) {
 
 void lighting() {
 	pass_Normal = normalize(mat3(Normal) * in_Normal);
+	pass_Tangent = normalize(mat3(Normal) * in_Tangent);
 	
 	vec3 posW = (Model * vec4(in_Vertex, 1.0)).xyz;
 	
 	pass_Viewer = normalize(posW - CameraPosition);
+	
+	pass_SelfPosition = normalize(posW - SelfPosition);
 	
 	for(int i = 0; i < LIGHTS_SIZE; i++) {
 		if(lights[i].enabled == ENABLED) {
 			setLight(i, posW);
 		}
 	}
-}
-
-void main() {
-	// Project vertex to clip space
-	gl_Position = Projection * View * Model * vec4(in_Vertex, 1.0);
-	
-	pass_TexCoord0 = (TextureMatrix * vec4(in_TexCoord0, 1.0, 0.0)).xy;
-	
-	lighting();
 }

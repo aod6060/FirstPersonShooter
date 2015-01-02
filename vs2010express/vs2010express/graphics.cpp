@@ -378,9 +378,13 @@ void StaticMesh::init(std::string fn) {
 	glBufferData(GL_ARRAY_BUFFER, nlist.size() * sizeof(glm::vec3), &nlist[0], GL_STATIC_DRAW);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[3]);
+	glBufferData(GL_ARRAY_BUFFER, tlist.size() * sizeof(glm::vec3), &tangentList[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(3);
+	
 	/*
-
-
 	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[2]);
 	glBufferData(GL_ARRAY_BUFFER, tlist.size() * sizeof(glm::vec2), &tlist[0], GL_STATIC_DRAW);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
@@ -397,10 +401,7 @@ void StaticMesh::init(std::string fn) {
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
-	/*
-	
 	glDisableVertexAttribArray(3);
-	*/
 }
 
 void StaticMesh::render() {
@@ -450,7 +451,7 @@ Texture::Texture() {
 	this->height = 0;
 }
 
-void Texture::init(std::string fn) {
+void Texture::init(std::string fn, bool mipmaps) {
 	SDL_Surface* temp;
 
 	temp = IMG_Load(fn.c_str());
@@ -472,8 +473,14 @@ void Texture::init(std::string fn) {
 
 	glGenTextures(1, &id);
 
+	int filter = GL_LINEAR;
+
+	if(mipmaps) {
+		filter = GL_LINEAR_MIPMAP_LINEAR;
+	}
+
 	glBindTexture(GL_TEXTURE_2D, id);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glTexImage2D(
@@ -858,15 +865,11 @@ void Terrain::init(std::string fn) {
 		tangent.push_back(T);
 	}
 
-	for(int i = 0; i < n.size(); i++) {
-		biTangent.push_back(glm::normalize(glm::cross(tangent[i], n2[i])));
-	}
-
 	glGenVertexArrays(1, &this->vao);
 
 	glBindVertexArray(this->vao);
 
-	glGenBuffers(5, vbo);
+	glGenBuffers(4, vbo);
 	glGenBuffers(1, &this->ibo);
 
 
@@ -884,6 +887,11 @@ void Terrain::init(std::string fn) {
 	glBufferData(GL_ARRAY_BUFFER, n2.size() * sizeof(glm::vec3), &n2[0], GL_STATIC_DRAW);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[3]);
+	glBufferData(GL_ARRAY_BUFFER, tangent.size() * sizeof(glm::vec3), &tangent[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(3);
 
 	/*
 	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[1]);
@@ -917,8 +925,8 @@ void Terrain::init(std::string fn) {
 	
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
-	/*
 	glDisableVertexAttribArray(3);
+	/*
 	glDisableVertexAttribArray(4);
 	*/
 }
@@ -933,7 +941,7 @@ void Terrain::render() {
 
 void Terrain::release() {
 	glDeleteBuffers(1, &ibo);
-	glDeleteBuffers(5, vbo);
+	glDeleteBuffers(4, vbo);
 	glDeleteVertexArrays(1, &this->vao);
 	heights.clear();
 }
@@ -1039,19 +1047,35 @@ glm::vec3 Camera::getDirection() {
 }
 
 // Material
-void Material::init(std::string albedofn) {
+void Material::init(std::string albedofn, std::string normalfn, std::string specularfn, std::string emissivefn, std::string alphaMaskfn) {
 	albedo.init(albedofn);
+	normal.init(normalfn);
+	specular.init(specularfn);
+	emissive.init(emissivefn, false);
+	alphaMask.init(alphaMaskfn, false);
 }
 
 void Material::bind() {
 	albedo.bind(GL_TEXTURE0);
+	normal.bind(GL_TEXTURE1);
+	specular.bind(GL_TEXTURE2);
+	emissive.bind(GL_TEXTURE3);
+	alphaMask.bind(GL_TEXTURE4);
 }
 
 void Material::unbind() {
+	alphaMask.unbind();
+	emissive.unbind();
+	specular.unbind();
+	normal.unbind();
 	albedo.unbind();
 }
 
 void Material::release() {
+	alphaMask.release();
+	emissive.release();
+	specular.release();
+	normal.release();
 	albedo.release();
 }
 
@@ -1095,35 +1119,12 @@ void Renderer::init() {
 	glm::mat4 tm = glm::scale(glm::vec3(-1.0f, 1.0f, 1.0f)) * glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	scene.setUniformMatrix4f("TextureMatrix", tm);
 	scene.createUniform("CameraPosition");
-
-	scene.createUniform("tex0");
-	scene.setUniform1i("tex0", 0);
-
+	scene.createUniform("SelfPosition");
 	for(int i = 0; i < 8; i++) {
 		this->createLight(i);
 	}
 
-	/*
-	scene.createUniform("Projection");
-	scene.createUniform("View");
-	scene.createUniform("Model");
-	scene.createUniform("Normal");
-	scene.createUniform("TextureMatrix");
-	glm::mat4 tm = glm::scale(glm::vec3(-1.0f, 1.0f, 1.0f)) * glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	scene.setUniformMatrix4f("TextureMatrix", tm);
-	scene.createUniform("CameraPosition");
-	scene.createUniform("tex0");
-	scene.setUniform1i("tex0", 0);
-	scene.createUniform("normal0");
-	scene.setUniform1i("normal0", 1);
-	scene.createUniform("roughness0");
-	scene.setUniform1i("roughness0", 2);
-	// This is the lighting section
-	for(int i = 0; i < Renderer::LIGHT_SIZE; i++) {
-		this->createLight(i);
-	}
 	this->createMaterial();
-	*/
 
 	scene.unbind();
 
@@ -1184,6 +1185,7 @@ void Renderer::setModel(const glm::mat4& w) {
 		glm::mat4 n = glm::transpose(glm::inverse(w));
 		scene.setUniformMatrix4f("Model", w);
 		scene.setUniformMatrix4f("Normal", n);
+		scene.setUniform3f("SelfPosition", glm::vec3(w[0][3], w[1][3], w[2][3]));
 	} else if(this->shaderType == Renderer::UI) {
 		ui.setUniformMatrix4f("Model", w);
 	}
@@ -1244,8 +1246,8 @@ void Renderer::setLight(Renderer::Lights lts, Light& l) {
 		ss2 << ss.str() << ".spotExp";
 		scene.setUniform1f(ss2.str(), l.spotExp);
 		ss2.str("");
-		ss2 << ss.str() << ".roughness";
-		scene.setUniform1f(ss2.str(), l.roughness);
+		ss2 << ss.str() << ".intensity";
+		scene.setUniform1f(ss2.str(), l.intensity);
 		ss2.str("");
 	}
 }
@@ -1283,65 +1285,33 @@ void Renderer::createLight(int i) {
 	ss2 << ss.str() << ".spotExp";
 	scene.createUniform(ss2.str());
 	ss2.str("");
-	ss2 << ss.str() << ".roughness";
+	ss2 << ss.str() << ".intensity";
 	scene.createUniform(ss2.str());
 	ss2.str("");
 }
 
 void Renderer::createMaterial() {
-	/*
 	std::stringstream ss;
 	std::stringstream ss2;
 	ss << "material";
-	ss2 << ss.str() << ".diffuse";
+	ss2 << ss.str() << ".albedo";
 	scene.createUniform(ss2.str());
+	scene.setUniform1i(ss2.str(), 0);
+	ss2.str("");
+	ss2 << ss.str() << ".normal";
+	scene.createUniform(ss2.str());
+	scene.setUniform1i(ss2.str(), 1);
 	ss2.str("");
 	ss2 << ss.str() << ".specular";
 	scene.createUniform(ss2.str());
+	scene.setUniform1i(ss2.str(), 2);
 	ss2.str("");
-	ss2 << ss.str() << ".emission";
+	ss2 << ss.str() << ".emissive";
 	scene.createUniform(ss2.str());
+	scene.setUniform1i(ss2.str(), 3);
 	ss2.str("");
-	ss2 << ss.str() << ".roughness";
+	ss2 << ss.str() << ".alphaMask";
 	scene.createUniform(ss2.str());
+	scene.setUniform1i(ss2.str(), 4);
 	ss2.str("");
-	ss2 << ss.str() << ".energyConserve";
-	scene.createUniform(ss2.str());
-	ss2.str("");
-	ss2 << ss.str() << ".reflectIndex";
-	scene.createUniform(ss2.str());
-	ss2.str("");
-	ss2 << ss.str() << ".metal";
-	scene.createUniform(ss2.str());
-	ss2.str("");
-	*/
-}
-
-void Renderer::setMaterial(Material& m) {
-	/*
-	std::stringstream ss;
-	std::stringstream ss2;
-	ss << "material";
-	ss2 << ss.str() << ".diffuse";
-	scene.setUniform3f(ss2.str(), m.diffuse);
-	ss2.str("");
-	ss2 << ss.str() << ".specular";
-	scene.setUniform3f(ss2.str(), m.specular);
-	ss2.str("");
-	ss2 << ss.str() << ".emission";
-	scene.setUniform3f(ss2.str(), m.emission);
-	ss2.str("");
-	ss2 << ss.str() << ".reflectIndex";
-	scene.setUniform1f(ss2.str(), m.reflectIndex);
-	ss2.str("");
-	ss2 << ss.str() << ".roughness";
-	scene.setUniform1f(ss2.str(), m.roughness);
-	ss2.str("");
-	ss2 << ss.str() << ".energyConserve";
-	scene.setUniform1f(ss2.str(), m.energyConserve);
-	ss2.str("");
-	ss2 << ss.str() << ".metal";
-	scene.setUniform1f(ss2.str(), m.metal);
-	ss2.str("");
-	*/
 }
