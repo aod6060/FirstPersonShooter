@@ -401,20 +401,34 @@ class Material {
 	Texture specular;
 	Texture emissive;
 	Texture alphaMask;
+
+	std::string albedofn;
+	std::string normalfn;
+	std::string specularfn;
+	std::string emissivefn;
+	std::string alphaMaskfn;
+
 public:
 
-	void init(
-		std::string albedofn, 
-		std::string normalfn = "data/texture/def_normal.png",
-		std::string specularfn = "data/texture/def_specular.png",
-		std::string emissivefn = "data/texture/def_emissive.png",
-		std::string alphaMask = "data/texture/def_alphaMask.png");
+	Material();
+
+	void init();
 
 	void bind();
 
 	void unbind();
 
 	void release();
+
+	void setAlbedoFilename(std::string fn);
+
+	void setNormalFilename(std::string fn);
+
+	void setSpecularFilename(std::string fn);
+
+	void setEmissiveFilename(std::string fn);
+
+	void setAlphaMaskFilename(std::string fn);
 };
 
 /*

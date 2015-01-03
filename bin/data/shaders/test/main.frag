@@ -171,8 +171,6 @@ vec4 lighting() {
 		}
 	}
 	
-	float NdotLem = max(dot(N, normalize(pass_SelfPosition)), 0.0);
-	
 	vec3 selfLit = emissiveMap * albedo;
 	
 	color += vec4(selfLit, 1.0);

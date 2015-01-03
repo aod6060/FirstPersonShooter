@@ -21,276 +21,192 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-/*
-	main.frag
-	
-	This scripting file contains code for the main fragment shader
-	for my first person shooter game.
-*/
 
 #version 330 core
 
-#define LIGHT_SIZE 8
-#define LIGHT_ENABLED 1
-#define LIGHT_DISABLE 0
-#define LIGHT_DIRECTIONAL 0
+// Defines
+#define LIGHTS_SIZE 8
+#define LIGHT_DIRECTION 0
 #define LIGHT_POINT 1
 #define LIGHT_SPOT 2
+#define ENABLED 1
+#define DISABLED 0
 
+// Light
 struct Light {
-	int enabled;
-	int type;
-	vec3 position;
-	vec3 diffuse;
-	vec3 specular;
-	float range; // This is for point light
-	vec3 spotDirection; // This is for spotLight
+	int enabled; // checks to see if the light is enabled
+	int type; // This is the light type
+	vec3 position; // Position of the light
+	vec3 ambient; // Ambient Light Color
+	vec3 diffuse; // diffuse term
+	vec3 specular; // Specular Term
+	float radius; // For attention
+	vec3 spotDirection; // Spot light ra
 	float spotExp;
-	float spotCutOff;
-	// Attenuation
-	float attenuation;
+	float intensity;
 };
 
-/*
-	Material
-*/
 struct Material {
-	vec3 diffuse;
-	vec3 specular;
-	vec3 emission;
-	float roughness;
-	float energyConserve;
-	float reflectIndex;
-	float metal;
+	sampler2D albedo;
+	sampler2D normal;
+	sampler2D specular;
+	sampler2D emissive;
+	sampler2D alphaMask;
 };
 
-// Sampler main sampler for project
-uniform sampler2D tex0;
-// Reflective Sampler
-uniform samplerCube reflectMap;
-// Lights
-uniform Light lights[LIGHT_SIZE];
-// Material
+// Uniforms
+//uniform sampler2D tex0;
+
+// Lighting
+uniform Light lights[LIGHTS_SIZE];
+
+// Material System
 uniform Material material;
 
-// output color to framebuffer
+// outward attributes
 out vec4 out_Color;
 
+// pass
 in vec2 pass_TexCoord0;
-//in vec4 pass_Color;
 in vec3 pass_Normal;
-in vec3 pass_LightDir[LIGHT_SIZE];
-in vec3 pass_SpotDirection[LIGHT_SIZE];
+in vec3 pass_Tangent;
 in vec3 pass_Viewer;
-// This is for reflectMap
-in vec3 pass_pos_eye;
-in vec3 pass_n_eye;
+in vec3 pass_LightPosition[LIGHTS_SIZE];
+in vec3 pass_SpotDirection[LIGHTS_SIZE];
+in vec3 pass_SelfPosition;
 
-// This is used to calculate the fresnel term
-float fresnel(vec3 v, vec3 h, float rn) {
-	// Calculate Fresnel Term n = 0.0 for the moment
-	float VdotH = dot(v, h);
+// Function Declarations
+vec3 lightTypes(int i, vec3 color, float dist, vec3 L, vec3 H);
+float energyCon(float NdotL, float ec);
+vec4 lighting();
+vec3 calcNormalMap();
+void alphaMasking();
+
+void main() {
+	vec4 lightColor = lighting();
 	
-	float f0 = (1.0 - rn) / (1.0 + rn);
+	// Do Gamma correction
+	vec3 gamma = vec3(1.0 / 2.2);
 	
-	f0 = f0 * f0;
+	alphaMasking();
 	
-	float p0 = VdotH * VdotH * VdotH * VdotH * VdotH;
-	
-	return f0 + (1.0 - f0) * p0;
+	out_Color = vec4(pow(lightColor.xyz, gamma), 1.0); // Make everything green
 }
 
-float geometry(vec3 l, vec3 v, vec3 h, vec3 n) {
-	// Cook Torrence Optimize
-	float NdotH = dot(n, h);
-	float NdotV = dot(n, v);
-	float NdotL = dot(n, l);
-	float VdotH = dot(v, h);
+vec3 lightTypes(int i, vec3 color, float dist, vec3 L, vec3 H) {
+	vec3 color2;
 	
-	float f1 = 2 * NdotH * NdotV;
-	float f2 = 2 * NdotH * NdotL;
-	
-	float iVdotH = 1.0 / VdotH;
-	
-	float v1 = f1 * iVdotH;
-	float v2 = f2 * iVdotH;
-
-	float g = min(1, min(v1, v2));
-	
-	return g;
-}
-
-// This is far more advace Normal Distribution than blinn-phong
-float distr(vec3 h, vec3 n, float m) {
-
-	float NdotHV = dot(n, h);
-	
-	float alpha = m * m;
-	
-	float NdotHV2 = NdotHV * NdotHV;
-	
-	float NdotHV4 = NdotHV2 * NdotHV2;
-	
-	float dim = 3.14 * pow(alpha, 2) * NdotHV4;
-	
-	float num = exp((NdotHV2 - 1) / (alpha*alpha * NdotHV2));
-	
-	float d = num / dim;
-	
-	return d;
-}
-
-// Microfacet Lighting
-// Specular Function
-float microfacet(vec3 l, vec3 v, vec3 n, float rough, float rn) {
-
-	/*
-		fmicrofacet(l, v) = (F(l, h)*G(l, v, h)*D(h)) / (4*dot(n, l)*dot(n, v))
-
-		F is fresnel term
-		
-		G is geometry term
-		
-		D is Normal Distribution
-	*/
-	// Calculate Half Vector
-	vec3 h = normalize(l + v);
-	// Calculating Dot Products
-	
-	// Calculate demenator
-	float NdotL = dot(n, l);
-	float NdotV = dot(n, v);
-	
-	float dem = 4.0 * NdotL * NdotV;
-	
-	float F = fresnel(v, h, rn);
-	
-	//float D = ((a + 2.0) / (2.0*3.14)) * pow(NdotHV, a);
-	
-	// Distribution
-	float D = distr(h, n, rough);
-	
-	// Calculate Geometry term, using implicit for simplicity
-	//float G = NdotL * NdotV;
-	float G = geometry(l, v, h, n);
-	
-	// Catting all terms
-	float num = F * G * D;
-	
-	
-	return num / dem;
-}
-
-/*
-	diffuse(vec3 N, vec3 L, float energyConverasion
-*/
-float diffuse(vec3 N, vec3 L, float energyConversion) {
-
-	float NdotL = dot(N, L);
-	
-	float f1 = NdotL + energyConversion;
-	
-	float f2 = 1 + energyConversion;
-	
-	f2 = f2 * f2;
-
-	return clamp(f1 / f2, 0.0f, 1.0f);
-}
-
-float fresnelReflection(vec3 v, vec3 l, float rn) {
-	vec3 h = normalize(l + v);
-	
-	float F = fresnel(v, h, rn);
-	
-	return F;
-}
-
-vec4 doLights2(int i, vec4 color, float dist, vec3 L) {
-	vec4 color2;
-	// Directional Light Calculation
-	if(lights[i].type == LIGHT_DIRECTIONAL) {
-		color2 = clamp(color, 0.0, 1.0);
-		
-	// Point Light Calculation
+	if(lights[i].type == LIGHT_DIRECTION) {
+		color2 = color;
 	} else if(lights[i].type == LIGHT_POINT) {
-		float att = 1.0 / (1.0 + lights[i].attenuation * pow(dist, 2));
+		float att = clamp(1.0 - dist / lights[i].radius, 0.0, 1.0);
 		
 		att *= att;
 		
-		//if(lights[i].range - dist > 0.0) {
-			color2 = clamp(color * att, 0.0, 1.0);
-		//}
-		
-	// Spot Light Calculation
+		color2 = color * att;
 	} else if(lights[i].type == LIGHT_SPOT) {
-		vec3 _L = normalize(pass_LightDir[i]);
-		
 		vec3 spotDir = normalize(pass_SpotDirection[i]);
-		float spotEffect = dot(_L, spotDir);
+		
+		float spotEffect = dot(L, spotDir);
+		
 		spotEffect = pow(spotEffect, lights[i].spotExp);
 		
-		/*
-			http://www.tomdalling.com/blog/modern-opengl/07-more-lighting-ambient-specular-attenuation-gamma/
-			Thanks for simplification
-		*/
-		float att = spotEffect / (1.0 + lights[i].attenuation * pow(dist, 2));
+		float att = clamp(spotEffect - dist / lights[i].radius, 0.0, 1.0);
 		
-		color2 = clamp(color * att, 0.0, 1.0);
+		att *= att;
+		
+		color2 = color * att;
 	}
 	
 	return color2;
 }
 
-vec4 doLights(int i, vec3 N, vec3 V, vec4 albedo) {
-	vec4 color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+float energyCon(float NdotL, float ec) {
+	float f1 = NdotL + ec;
 	
-	if(lights[i].enabled == LIGHT_ENABLED) {
-		vec3 L = normalize(pass_LightDir[i]);
-		
-		float mf = microfacet(L, V, N, material.roughness, material.reflectIndex);
-		
-		vec3 diffuse = lights[i].diffuse * material.diffuse * albedo.xyz * diffuse(N, L, material.energyConserve);
-		vec3 specular = lights[i].specular * material.specular * albedo.xyz * mf;
-		vec3 emission = material.emission;
-		
-		color = doLights2(i, vec4(diffuse + specular + emission, 1.0), length(pass_LightDir[i]), L);
+	float f2 = 1 + ec;
+	
+	f2 = f2 * f2;
+	
+	return clamp(f1 / f2, 0.0, 1.0);
+}
+
+/*
+	lighting is the main hub for my lighting and
+	material pipeline.
+*/
+vec4 lighting() {
+	vec4 color = vec4(0.0);
+	color.w = 1.0;
+	
+	vec3 N = calcNormalMap();
+	vec3 V = normalize(pass_Viewer);
+	
+	float pi = 3.14;
+	
+	vec3 albedo = texture(material.albedo, pass_TexCoord0).xyz;
+	vec3 specularMap = texture(material.specular, pass_TexCoord0).xyz;
+	vec3 emissiveMap = texture(material.emissive, pass_TexCoord0).xyz;
+	
+	for(int i = 0; i < LIGHTS_SIZE; i++) {
+	
+		if(lights[i].enabled == ENABLED) {
+			vec3 L = normalize(pass_LightPosition[i]);
+			vec3 H = normalize(L + V);
+			
+			vec3 ambient = lights[i].ambient * albedo;
+			
+			float NdotL = max(dot(N, L), 0.0);
+			float NdotH = max(dot(N, H), 0.0);
+			
+			float power = (lights[i].intensity) * 256.0f;
+			
+			float blinnPhong = ((power + 2.0) / (2.0 * pi)) * pow(NdotH, power);
+			// Using Labertion diffuse lighting
+			vec3 diffuse = lights[i].diffuse * albedo * NdotL;
+			
+			vec3 specular = lights[i].specular * albedo * specularMap * blinnPhong;
+			
+			color += vec4(lightTypes(i,ambient + diffuse + specular, length(L), L, H), 1.0);
+		}
 	}
+	
+	vec3 selfLit = emissiveMap * albedo;
+	
+	color += vec4(selfLit, 1.0);
+	
 	
 	return color;
 }
 
-// This takes care of the reflect map
-vec4 getReflectMap() {
-	vec3 incident_eye = normalize(pass_pos_eye);
-	vec3 normal = normalize(pass_n_eye);
+void alphaMasking() {
+	vec4 am = texture(material.alphaMask, pass_TexCoord0);
 	
-	vec3 reflected = reflect(incident_eye, normal);
-	
-	return texture(reflectMap, reflected);
+	if(am.r == 0.0) {
+		discard;
+	}
 }
 
-void main() {
-	// Setting to just white output for now
-	vec4 color;
+vec3 calcNormalMap() {
 	vec3 N = normalize(pass_Normal);
-	vec3 V = normalize(pass_Viewer);
-	vec4 albedo = texture(tex0, pass_TexCoord0);
 	
-	color = vec4(1.0);
+	vec3 T = normalize(pass_Tangent);
 	
-	vec4 lightColors[LIGHT_SIZE];
+	T = normalize(T - dot(T, N));
 	
-	for(int i = 0; i < LIGHT_SIZE; i++) {
-		lightColors[i] = doLights(i, N, V, albedo);
-	}
+	vec3 B = cross(T, N);
 	
-	vec4 finalLightColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	vec3 normal = texture(material.normal, pass_TexCoord0).xyz;
 	
-	for(int i = 0; i < LIGHT_SIZE; i++) {
-		finalLightColor = clamp(lightColors[i] + finalLightColor, 0.0, 1.0);
-	}
+	normal = 2.0 * normal - vec3(1.0);
 	
-	vec3 gamma = vec3(1.0/2.2);
+	vec3 NN;
 	
-	out_Color = vec4(pow(color.xyz * finalLightColor.xyz, gamma), 1.0);
+	mat3 TBN = mat3(T, B, N);
+	
+	NN = TBN * normal;
+	
+	NN = normalize(NN);
+	
+	return NN;
 }

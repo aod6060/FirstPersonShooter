@@ -37,51 +37,58 @@ void Game::init() {
 	this->test.init("data/mesh/cube.smesh");
 	player.init("data/mesh/player.smesh");
 
-	testMat.init("data/texture/grass0.png",
-				 "data/texture/grass0_normal.png",
-				 "data/texture/grass0_specular.png");
+	testMat.setAlbedoFilename("data/texture/grass0.png");
+	testMat.setNormalFilename("data/texture/grass0_normal.png");
+	testMat.setSpecularFilename("data/texture/grass0_specular.png");
 
-	testMat2.init("data/texture/grass1.png",
-				  "data/texture/grass1_normal.png",
-				  "data/texture/grass1_specular.png");
+	testMat.init();
 
-	playerMat.init("data/texture/player.png");
-	
+	testMat2.setAlbedoFilename("data/texture/grass1.png");
+	testMat2.setNormalFilename("data/texture/grass1_normal.png");
+	testMat2.setSpecularFilename("data/texture/grass1_specular.png");
+	testMat2.init();
+
+	playerMat.setAlbedoFilename("data/texture/player.png");
+	playerMat.init();
+
 	this->sphere.init("data/mesh/sphere.smesh");
 
-	testMat3.init("data/texture/dirt0.png",
-				  "data/texture/dirt0_normal.png",
-				  "data/texture/dirt0_specular.png");
+	testMat3.setAlbedoFilename("data/texture/dirt0.png");
+	testMat3.setNormalFilename("data/texture/dirt0_normal.png");
+	testMat3.setSpecularFilename("data/texture/dirt0_specular.png");
+	testMat3.init();
 
 	monkey.init("data/mesh/monkey.smesh");
 
-	sand.init("data/texture/sand0.png",
-			  "data/texture/sand0_normal.png",
-			  "data/texture/sand0_specular.png");
+	sand.setAlbedoFilename("data/texture/sand0.png");
+	sand.setNormalFilename("data/texture/sand0_normal.png");
+	sand.setSpecularFilename("data/texture/sand0_specular.png");
+	sand.init();
 
-	silver.init("data/texture/silver.png",
-				"data/texture/def_normal.png",
-				"data/texture/roughness.png");
+	silver.setAlbedoFilename("data/texture/silver.png");
+	silver.setSpecularFilename("data/texture/roughness.png");
+	silver.setNormalFilename("data/texture/roughness_normal.png");
+	silver.init();
 
-	gold.init("data/texture/gold.png",
-			  "data/texture/def_normal.png",
-			  "data/texture/roughness.png");
+	gold.setAlbedoFilename("data/texture/gold.png");
+	gold.setSpecularFilename("data/texture/roughness.png");
+	gold.setNormalFilename("data/texture/roughness_normal.png");
 
-	copper.init("data/texture/copper.png",				
-				"data/texture/def_normal.png",
-				"data/texture/roughness.png");
+	gold.init();
 
-	
-	emTest.init("data/texture/test.png",
-				"data/texture/def_normal.png",
-				"data/texture/def_specular.png",
-				"data/texture/test_emissive.png");
+	copper.setAlbedoFilename("data/texture/copper.png");
+	copper.setSpecularFilename("data/texture/roughness.png");
+	copper.setNormalFilename("data/texture/roughness_normal.png");
 
-	alphaTest.init("data/texture/test.png",
-				   "data/texture/def_normal.png",
-				   "data/texture/def_specular.png",
-				   "data/texture/def_emissive.png",
-				   "data/texture/alphaTest.png");
+	copper.init();
+
+	emTest.setAlbedoFilename("data/texture/test.png");
+	emTest.setEmissiveFilename("data/texture/test_emissive.png");
+	emTest.init();
+
+	alphaTest.setAlbedoFilename("data/texture/test.png");
+	alphaTest.setAlphaMaskFilename("data/texture/alphaTest.png");
+	alphaTest.init();
 
 	this->terrain.init("data/heightmap/heightmap1.png");
 
@@ -114,7 +121,7 @@ void Game::init() {
 	light0.position = glm::vec3(-0.5, -0.5, 0.0);
 	light0.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
 	light0.specular = glm::vec3(1.0f, 1.0f, 1.0f);
-	light0.intensity = 0.1f;
+	light0.intensity = 0.3f;
 
 	light1.enabled = 0;
 	light1.type = Renderer::POINT;
@@ -122,7 +129,7 @@ void Game::init() {
 	light1.diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
 	light1.specular = glm::vec3(1.0f, 0.0f, 0.0f);
 	light1.radius = 3.0;
-	light1.intensity = 1.0f;
+	light1.intensity = 0.1f;
 
 	light2.enabled = 0;
 	light2.type = Renderer::POINT;
@@ -130,7 +137,7 @@ void Game::init() {
 	light2.diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
 	light2.specular = glm::vec3(0.0f, 1.0f, 0.0f);
 	light2.radius = 3.0;
-	light2.intensity = 1.0f;
+	light2.intensity = 0.1f;
 
 	light3.enabled = 0;
 	light3.type = Renderer::POINT;
@@ -138,7 +145,7 @@ void Game::init() {
 	light3.diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
 	light3.specular = glm::vec3(0.0f, 0.0f, 1.0f);
 	light3.radius = 3.0;
-	light3.intensity = 1.0f;
+	light3.intensity = 0.1f;
 
 	light4.enabled = 0;
 	light4.type = Renderer::SPOT;
@@ -148,7 +155,7 @@ void Game::init() {
 	light4.spotDirection = glm::vec3(0.0f, -0.5f, -0.5f);
 	light4.spotExp = 1.0f;
 	light4.radius = 3.0;
-	light4.intensity = 1.0f;
+	light4.intensity = 0.1f;
 }
 	
 void Game::update() {

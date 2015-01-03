@@ -1047,7 +1047,15 @@ glm::vec3 Camera::getDirection() {
 }
 
 // Material
-void Material::init(std::string albedofn, std::string normalfn, std::string specularfn, std::string emissivefn, std::string alphaMaskfn) {
+Material::Material() {
+	this->albedofn = "data/texture/def_albedo.png";
+	this->normalfn = "data/texture/def_normal.png";
+	this->specularfn = "data/texture/def_specular.png";
+	this->emissivefn = "data/texture/def_emissive.png";
+	this->alphaMaskfn = "data/texture/def_alphaMask.png";
+}
+
+void Material::init() {
 	albedo.init(albedofn);
 	normal.init(normalfn);
 	specular.init(specularfn);
@@ -1077,6 +1085,26 @@ void Material::release() {
 	specular.release();
 	normal.release();
 	albedo.release();
+}
+
+void Material::setAlbedoFilename(std::string fn) {
+	this->albedofn = fn;
+}
+
+void Material::setNormalFilename(std::string fn) {
+	this->normalfn = fn;
+}
+
+void Material::setSpecularFilename(std::string fn) {
+	this->specularfn = fn;
+}
+
+void Material::setEmissiveFilename(std::string fn) {
+	this->emissivefn = fn;
+}
+
+void Material::setAlphaMaskFilename(std::string fn) {
+	this->alphaMaskfn = fn;
 }
 
 // Renderer
@@ -1109,7 +1137,7 @@ void Renderer::init() {
 	// Init Shaders
 
 	// Create Scene Shader
-	scene.init("data/shaders/test/main.vert", "data/shaders/test/main.frag");
+	scene.init("data/shaders/main.vert", "data/shaders/main.frag");
 	scene.bind();
 	scene.createUniform("Projection");
 	scene.createUniform("View");
