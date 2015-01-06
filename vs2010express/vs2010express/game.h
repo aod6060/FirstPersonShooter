@@ -59,13 +59,30 @@ class Game : public WindowCallback {
 	Light light3;
 	Light light4;
 
+	// DrawSurface
+	DrawSurface ds;
+	Texture testTex;
+
+	Shader depthShader;
+	Texture depthTexture;
+	Framebuffer depthFramebuffer;
+
 	float yrot;
 
 	void renderSphere(glm::vec3 location, Material& material);
 
+	void renderSphere(glm::vec3 location, Shader& shader);
+
 	void createMaterial(Material& m, glm::vec3 d, glm::vec3 s, glm::vec3 e, float ri, float r, float ec, float metal);
 
 	int test_index;
+
+
+	glm::mat4 renderShadow();
+
+	void renderScene(glm::mat4& depthvp);
+
+	void renderUI();
 
 public:
 

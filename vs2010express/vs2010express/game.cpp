@@ -24,6 +24,31 @@ THE SOFTWARE.
 
 #include "game.h"
 
+glm::mat4 lookAt(glm::vec3 eye, glm::vec3 target, glm::vec3 up) {
+	glm::vec3 f = glm::normalize(target - eye);
+	glm::vec3 u = glm::normalize(up);
+	glm::vec3 s = glm::normalize(glm::cross(f, u));
+
+	u = glm::cross(s, f);
+
+	glm::mat4 result;
+
+	result[0][0] = s.x;
+	result[1][0] = s.y;
+	result[2][0] = s.z;
+	result[0][1] = u.x;
+	result[1][1] = u.y;
+	result[2][1] = u.z;
+	result[0][2] = -f.x;
+	result[1][2] = -f.y;
+	result[2][2] = -f.z;
+	result[3][0] = -glm::dot(s, eye);
+	result[3][1] = -glm::dot(u, eye);
+	result[3][2] = glm::dot(f, eye);
+
+	return result;
+}
+
 void Game::init() {
 
 	this->test_index = 0;
@@ -156,68 +181,154 @@ void Game::init() {
 	light4.spotExp = 1.0f;
 	light4.radius = 3.0;
 	light4.intensity = 0.1f;
+
+
+	ds.init();
+	testTex.init("data/texture/tile0.png");
+
+	depthShader.init("data/shaders/shadow.vert",
+					 "data/shaders/shadow.frag");
+
+	depthShader.bind();
+	depthShader.createUniform("Projection");
+	depthShader.createUniform("View");
+	depthShader.createUniform("Model");
+	depthShader.unbind();
+
+	depthTexture.init(1024, 1024, Texture::DEPTH);
+
+	depthFramebuffer.create();
+
+	depthFramebuffer.bind();
+
+	depthTexture.bind();
+
+	depthFramebuffer.attachTexture(Framebuffer::DEPTH, depthTexture);
+
+	depthTexture.unbind();
+
+	glDrawBuffer(GL_NONE);
+
+	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "There something wrong with the frame buffer" << std::endl;
+	}
+
+	depthFramebuffer.unbind();
 }
-	
-void Game::update() {
 
-	WindowManager* wm = WindowManager::getInstance();
-	Renderer* rend = Renderer::getInstance();
+glm::mat4 Game::renderShadow() {
+	// Implement this in a minute
 
-	glm::mat4 p, v, m;
+	float num = 128.0f;
 
-	if(wm->keyHit(SDL_SCANCODE_ESCAPE)) {
-		wm->quit();
-	}
+	glm::mat4 p = glm::ortho(-num, num, -num, num, -num, num * 2.0f);
+	glm::mat4 v = glm::translate(glm::vec3(cam.getPos().x, 0.0f, cam.getPos().z)) * glm::lookAt(
+		-light0.position,
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f));
 
-	if(wm->keyHit(SDL_SCANCODE_TAB)) {
-		if(wm->getRelativeMouseMode() == SDL_TRUE) {
-			wm->setRelativeMouseMode(SDL_FALSE);
-		} else {
-			wm->setRelativeMouseMode(SDL_TRUE);
-		}
-	}
+	glm::mat4 m;
 
-	if(wm->mouseButtonHit(SDL_BUTTON_LEFT)) {
-		this->test_index++;
-
-
-		if(this->test_index > 9) {
-			this->test_index = 0;
-		}
-	}
-
-	if(wm->keyHit(SDL_SCANCODE_1)) {
-		light0.enabled = !light0.enabled;
-	}
-
-	if(wm->keyHit(SDL_SCANCODE_2)) {
-		light1.enabled = !light1.enabled;
-	}
-
-	if(wm->keyHit(SDL_SCANCODE_3)) {
-		light2.enabled = !light2.enabled;
-	}
-
-	if(wm->keyHit(SDL_SCANCODE_4)) {
-		light3.enabled = !light3.enabled;
-	}
-
-	if(wm->keyHit(SDL_SCANCODE_5)) {
-		light4.enabled = !light4.enabled;
-	}
-
-	this->yrot += 1.0f / (1000 / 60);
-
-	if(yrot > 360.0f) {
-		this->yrot -= 360.0f;
-	}
-
-	cam.update();
-
-	glClearColor(0.5, 0.6, 1.0, 1.0);
+	depthFramebuffer.bind();
+	glViewport(0, 0, 1024, 1024);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	depthShader.bind();
+
+	depthShader.setUniformMatrix4f("Projection", p);
+	depthShader.setUniformMatrix4f("View", v);
+
+	m = glm::translate(glm::vec3(0.0f, 2.0f, -5.0f)) *
+				  glm::rotate(yrot, glm::vec3(1.0f, 1.0f, 1.0f));
+
+
+	depthShader.setUniformMatrix4f("Model", m);
+
+	this->test.render();
+
+	m = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f));
+
+	depthShader.setUniformMatrix4f("Model", m);
+
+	this->terrain.render();
+
+	m = glm::translate(glm::vec3(0.0f, 0.0f, 5.0f));
+
+	depthShader.setUniformMatrix4f("Model", m);
+
+	this->player.render();
+
+	m = glm::translate(glm::vec3(0.0f, 0.0f, 18.0f));
+
+	depthShader.setUniformMatrix4f("Model", m);
+
+	this->sphere.render();
+
+	m = glm::translate(glm::vec3(18.0f, 0.0f, 18.0f));
+
+	depthShader.setUniformMatrix4f("Model", m);
+
+	this->monkey.render();
+
+	glm::vec3 loc(0.0f, 30.0f, -20);
+	
+	for(int i = 0; i < 10; i++) {
+		this->renderSphere(loc, depthShader);
+		loc.z += 5.0f;
+	}
+
+	loc.x = 5.0;
+	loc.z = -20.0;
+
+	for(int i = 0; i < 10; i++) {
+		this->renderSphere(loc, depthShader);
+		loc.z += 5.0f;
+	}
+
+	loc.x = -5.0;
+	loc.z = -20.0;
+
+	for(int i = 0; i < 10; i++) {
+		this->renderSphere(loc, depthShader);
+		loc.z += 5.0f;
+	}
+
+	m = glm::translate(glm::vec3(0.0f, 2.0f, 30.0f));
+
+	depthShader.setUniformMatrix4f("Model", m);
+
+	test.render();
+
+	m = glm::translate(glm::vec3(4.0f, 2.0f, 30.0f));
+
+	depthShader.setUniformMatrix4f("Model", m);
+
+	test.render();
+
+	depthShader.unbind();
+
+	depthFramebuffer.unbind();
+
+	return p * v;
+}
+
+void Game::renderScene(glm::mat4& depthvp) {
+	// Implement this now
+	Renderer* rend = Renderer::getInstance();
+
+	glm::mat4 m;
+
 	rend->startShader(Renderer::SCENE);
+
+	glm::mat4 bias(
+		0.5f, 0.0f, 0.0f, 0.0f,
+		0.0f, 0.5f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.5f, 0.0f,
+		0.5f, 0.5f, 0.5f, 1.0f
+	);
+	rend->setDepthMatrix(bias * depthvp);
+
+	depthTexture.bind(GL_TEXTURE5);
 
 	rend->setCamera(cam);
 
@@ -315,7 +426,15 @@ void Game::update() {
 	test.render();
 	alphaTest.unbind();
 
+	depthTexture.unbind();
+
 	rend->endShader(Renderer::SCENE);
+}
+
+void Game::renderUI() {
+	glm::mat4 p, v, m;
+	Renderer* rend = Renderer::getInstance();
+	WindowManager* wm = WindowManager::getInstance();
 
 	rend->startShader(Renderer::UI);
 
@@ -325,16 +444,103 @@ void Game::update() {
 
 	rend->setProjection(p);
 	rend->setView(v);
+
 	rend->setModel(m);
 
-	font.renderString("Hello World");
+	glm::vec3 cp = cam.getPos();
+
+	font.renderString("Position: [%f, %f, %f]", cp.x, cp.y, cp.z);
+
+
+	m = glm::translate(glm::vec3(wm->getWidth() - 256.0f, 0.0f, 0.0f)) *
+		glm::scale(glm::vec3(256.0f, 256.0f, 0.0));
+
+	rend->setModel(m);
+
+	depthTexture.bind();
+
+	ds.render();
+
+	depthTexture.unbind();
 
 	rend->endShader(Renderer::UI);
+}
+
+void Game::update() {
+
+	WindowManager* wm = WindowManager::getInstance();
+	Renderer* rend = Renderer::getInstance();
+
+	glm::mat4 p, v, m;
+
+	if(wm->keyHit(SDL_SCANCODE_ESCAPE)) {
+		wm->quit();
+	}
+
+	if(wm->keyHit(SDL_SCANCODE_TAB)) {
+		if(wm->getRelativeMouseMode() == SDL_TRUE) {
+			wm->setRelativeMouseMode(SDL_FALSE);
+		} else {
+			wm->setRelativeMouseMode(SDL_TRUE);
+		}
+	}
+
+	if(wm->mouseButtonHit(SDL_BUTTON_LEFT)) {
+		this->test_index++;
+
+
+		if(this->test_index > 9) {
+			this->test_index = 0;
+		}
+	}
+
+	if(wm->keyHit(SDL_SCANCODE_1)) {
+		light0.enabled = !light0.enabled;
+	}
+
+	if(wm->keyHit(SDL_SCANCODE_2)) {
+		light1.enabled = !light1.enabled;
+	}
+
+	if(wm->keyHit(SDL_SCANCODE_3)) {
+		light2.enabled = !light2.enabled;
+	}
+
+	if(wm->keyHit(SDL_SCANCODE_4)) {
+		light3.enabled = !light3.enabled;
+	}
+
+	if(wm->keyHit(SDL_SCANCODE_5)) {
+		light4.enabled = !light4.enabled;
+	}
+
+	this->yrot += 1.0f / (1000 / 60);
+
+	if(yrot > 360.0f) {
+		this->yrot -= 360.0f;
+	}
+
+	cam.update();
+
+	glm::mat4 depthvp = this->renderShadow();
+
+	glViewport(0, 0, wm->getWidth(), wm->getHeight());
+	glClearColor(0.5, 0.6, 1.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	this->renderScene(depthvp);
+
+	this->renderUI();
 
 	rend = 0;
 }
 
 void Game::release() {
+	depthFramebuffer.release();
+	depthTexture.release();
+	depthShader.release();
+	testTex.release();
+	ds.release();
 	terrain.release();
 	font.release();
 	playerMat.release();
@@ -364,4 +570,12 @@ void Game::renderSphere(glm::vec3 location, Material& material) {
 	sphere.render();
 
 	material.unbind();
+}
+
+void Game::renderSphere(glm::vec3 location, Shader& shader) {
+	glm::mat4 m = glm::translate(location);
+
+	shader.setUniformMatrix4f("Model", m);
+
+	sphere.render();
 }

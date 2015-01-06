@@ -54,6 +54,7 @@ uniform mat4 View;
 uniform mat4 Model;
 uniform mat4 Normal;
 uniform mat4 TextureMatrix;
+uniform mat4 DepthBias;
 uniform vec3 CameraPosition;
 uniform vec3 SelfPosition;
 // Lighting
@@ -73,10 +74,12 @@ out vec3 pass_Viewer;
 out vec3 pass_LightPosition[LIGHTS_SIZE];
 out vec3 pass_SpotDirection[LIGHTS_SIZE];
 out vec3 pass_SelfPosition;
+out vec4 pass_ShadowCoord;
 
 // Function Declareations
 void setLight(int i, vec3 posW);
 void lighting();
+void shadow();
 
 void main() {
 	// Project vertex to clip space
@@ -85,6 +88,8 @@ void main() {
 	pass_TexCoord0 = (TextureMatrix * vec4(in_TexCoord0, 1.0, 0.0)).xy;
 	
 	lighting();
+	
+	shadow();
 }
 
 
@@ -114,4 +119,8 @@ void lighting() {
 			setLight(i, posW);
 		}
 	}
+}
+
+void shadow() {
+	pass_ShadowCoord = DepthBias * Model * vec4(in_Vertex, 1.0);
 }

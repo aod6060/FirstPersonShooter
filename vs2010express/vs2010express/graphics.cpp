@@ -262,9 +262,6 @@ void StaticMesh::init(std::string fn) {
 
 	glm::mat4 imat = glm::transpose(glm::inverse(mat));
 
-	//glm::mat3 imat3x3 = glm::make_mat3(&imat[0][0]);
-
-
 	for(int i = 0; i < v.size(); i++) {
 		glm::vec4 tv(v[i], 1.0);
 
@@ -299,43 +296,6 @@ void StaticMesh::init(std::string fn) {
 		tangent.push_back(T);
 	}
 
-	/*
-	for(int i = 0; i < bt.size(); i++) {
-		glm::vec3 v1 = v[bt[i].t1.v1];
-		glm::vec3 v2 = v[bt[i].t1.v2];
-		glm::vec3 v3 = v[bt[i].t1.v3];
-
-		glm::vec2 t1 = t[bt[i].t2.v1];
-		glm::vec2 t2 = t[bt[i].t2.v2];
-		glm::vec2 t3 = t[bt[i].t2.v3];
-
-		glm::vec3 edge1 = v2 - v1;
-		glm::vec3 edge2 = v3 - v1;
-
-		float deltaU1 = t2.x - t1.x;
-		float deltaV1 = t2.y - t1.y;
-		float deltaU2 = t3.x - t1.x;
-		float deltaV2 = t3.y - t1.y;
-
-		float det = 1.0f / (deltaU1 * deltaV2 - deltaU2 * deltaV1);
-
-		std::cout << det << std::endl;
-
-		glm::vec3 _tangent;
-
-		_tangent.x = det * (deltaV2 * edge1.x - deltaV1 * edge2.x);
-		_tangent.x = det * (deltaV2 * edge1.y - deltaV1 * edge2.y);
-		_tangent.x = det * (deltaV2 * edge1.z - deltaV1 * edge2.z);
-
-		tangent[bt[i].t1.v1] += _tangent;
-		tangent[bt[i].t1.v2] += _tangent;
-		tangent[bt[i].t1.v3] += _tangent;
-	}
-
-	for(int i = 0; i < tangent.size(); i++) {
-		tangent[i] = glm::normalize(tangent[i]);
-	}
-	*/
 	std::vector<glm::vec3> vlist;
 	std::vector<glm::vec3> nlist;
 	std::vector<glm::vec2> tlist;
@@ -384,18 +344,6 @@ void StaticMesh::init(std::string fn) {
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(3);
 	
-	/*
-	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[2]);
-	glBufferData(GL_ARRAY_BUFFER, tlist.size() * sizeof(glm::vec2), &tlist[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(2);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[3]);
-	glBufferData(GL_ARRAY_BUFFER, tlist.size() * sizeof(glm::vec3), &tangentList[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(3);
-	*/
-
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDisableVertexAttribArray(0);
@@ -500,6 +448,53 @@ void Texture::init(std::string fn, bool mipmaps) {
 	SDL_FreeSurface(temp);
 }
 
+void Texture::init(int width, int height, Texture::TextureFormatType format) {
+	this->width = width;
+	this->height = height;
+
+	int glformat = 0;
+	int glformat2 = 0;
+	int type = 0;
+
+	if(format == Texture::RGB) {
+		glformat = GL_RGB;
+		glformat2 = GL_RGB;
+		type = GL_UNSIGNED_BYTE;
+	} else if(format == Texture::RGBA) {
+		glformat = GL_RGBA;
+		glformat2 = GL_RGBA;
+		type = GL_UNSIGNED_BYTE;
+	} else if(format == Texture::DEPTH) {
+		glformat = GL_DEPTH_COMPONENT;
+		glformat2 = GL_DEPTH_COMPONENT16;
+		type = GL_FLOAT;
+	}
+
+	glGenTextures(1, &this->id);
+
+	glBindTexture(GL_TEXTURE_2D, this->id);
+	
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		glformat2,
+		this->width,
+		this->height,
+		0,
+		glformat,
+		type,
+		0);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 void Texture::bind(int tt) {
 	glActiveTexture(tt);
 	glBindTexture(GL_TEXTURE_2D, id);
@@ -507,6 +502,10 @@ void Texture::bind(int tt) {
 
 void Texture::unbind() {
 	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+GLuint Texture::getID() {
+	return this->id;
 }
 
 void Texture::release() {
@@ -599,6 +598,59 @@ void Cubemap::unbind() {
 
 void Cubemap::release() {
 	glDeleteTextures(1, &this->id);
+}
+
+// Framebuffer
+Framebuffer::Framebuffer() {
+	this->id = 0;
+}
+
+void Framebuffer::create() {
+	glGenFramebuffers(1, &this->id);
+}
+
+void Framebuffer::bind() {
+	glBindFramebuffer(GL_FRAMEBUFFER, this->id);
+}
+
+void Framebuffer::unbind() {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+	
+void Framebuffer::attachTexture(FrameBufferAttachType type, Texture& t) {
+	switch(type) {
+	case Framebuffer::DEPTH:
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, t.getID(), 0);
+		break;
+	case Framebuffer::COLOR0:
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t.getID(), 0);
+		break;
+	case Framebuffer::COLOR1:
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, t.getID(), 0);
+		break;
+	case Framebuffer::COLOR2:
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, t.getID(), 0);
+		break;
+	case Framebuffer::COLOR3:
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, t.getID(), 0);
+		break;
+	case Framebuffer::COLOR4:
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, t.getID(), 0);
+		break;
+	case Framebuffer::COLOR5:
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, t.getID(), 0);
+		break;
+	case Framebuffer::COLOR6:
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT6, t.getID(), 0);
+		break;
+	case Framebuffer::COLOR7:
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT7, t.getID(), 0);
+		break;
+	}
+}
+
+void Framebuffer::release() {
+	glDeleteFramebuffers(1, &this->id);
 }
 
 // Font
@@ -736,6 +788,61 @@ int Font::getWidth() {
 
 int Font::getHeight() {
 	return this->height;
+}
+
+// DrawSurface
+void DrawSurface::init() {
+	GLfloat vlist[] = {
+		0.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 1.0f, 0.0f
+	};
+
+	GLfloat tlist[] = {
+		0.0f, 0.0f,
+		1.0f, 0.0f,
+		0.0f, 1.0f,
+		0.0f, 1.0f,
+		1.0f, 0.0f,
+		1.0f, 1.0f
+	};
+
+	glGenVertexArrays(1, &this->vao);
+
+	glBindVertexArray(this->vao);
+
+	glGenBuffers(2, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vlist), vlist, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(tlist), tlist, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+
+}
+
+void DrawSurface::render() {
+	glBindVertexArray(this->vao);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glBindVertexArray(0);
+}
+
+void DrawSurface::release() {
+	glDeleteBuffers(2, this->vbo);
+	glDeleteVertexArrays(1, &this->vao);
 }
 
 // Terrain
@@ -893,28 +1000,6 @@ void Terrain::init(std::string fn) {
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(3);
 
-	/*
-	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[1]);
-	glBufferData(GL_ARRAY_BUFFER, n2.size() * sizeof(glm::vec3), &n2[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(1);
-
-	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[2]);
-	glBufferData(GL_ARRAY_BUFFER, t.size() * sizeof(glm::vec2), &t[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(2);
-
-	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[3]);
-	glBufferData(GL_ARRAY_BUFFER, tangent.size() * sizeof(glm::vec3), &tangent[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(3);
-
-	glBindBuffer(GL_ARRAY_BUFFER, this->vbo[4]);
-	glBufferData(GL_ARRAY_BUFFER, tangent.size() * sizeof(glm::vec3), &biTangent[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(4);
-	*/
-
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, tris.size() * sizeof(Triangle), &tris[0], GL_STATIC_DRAW);
 
@@ -922,13 +1007,9 @@ void Terrain::init(std::string fn) {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glDisableVertexAttribArray(0);
-	
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
 	glDisableVertexAttribArray(3);
-	/*
-	glDisableVertexAttribArray(4);
-	*/
 }
 
 void Terrain::render() {
@@ -1107,6 +1188,29 @@ void Material::setAlphaMaskFilename(std::string fn) {
 	this->alphaMaskfn = fn;
 }
 
+void Transform::setPosition(glm::vec3 position) {
+	this->position = position;
+}
+
+glm::vec3 Transform::getPosition() {
+	return this->position;
+}
+
+void Transform::setRotation(glm::vec3 rotation) {
+	this->rotation = rotation;
+}
+
+glm::vec3 Transform::getRotation() {
+	return this->rotation;
+}
+
+void Transform::getModel(glm::mat4& m) {
+	m = glm::translate(this->position) *
+		glm::rotate(glm::radians(rotation.x), glm::vec3(1.0, 0.0, 0.0)) *
+		glm::rotate(glm::radians(rotation.y), glm::vec3(0.0, 1.0, 0.0)) *
+		glm::rotate(glm::radians(rotation.z), glm::vec3(0.0, 0.0, 1.0));
+}
+
 // Renderer
 Renderer* Renderer::instance = 0;
 
@@ -1153,7 +1257,18 @@ void Renderer::init() {
 	}
 
 	this->createMaterial();
+	scene.createUniform("DepthBias");
 
+	glm::mat4 biasMatrix(
+		0.5, 0.0, 0.0, 0.0,
+		0.0, 0.5, 0.0, 0.0,
+		0.0, 0.0, 0.5, 0.0,
+		0.0, 0.0, 0.0, 1.0
+	);
+
+	scene.setUniformMatrix4f("DepthBias", biasMatrix);
+	scene.createUniform("shadow");
+	scene.setUniform1i("shadow", 5);
 	scene.unbind();
 
 	// Create UI Shader
@@ -1342,4 +1457,8 @@ void Renderer::createMaterial() {
 	scene.createUniform(ss2.str());
 	scene.setUniform1i(ss2.str(), 4);
 	ss2.str("");
+}
+
+void Renderer::setDepthMatrix(glm::mat4 depthvp) {
+	this->scene.setUniformMatrix4f("DepthBias", depthvp);
 }

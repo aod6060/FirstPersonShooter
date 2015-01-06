@@ -63,6 +63,8 @@ uniform Light lights[LIGHTS_SIZE];
 // Material System
 uniform Material material;
 
+uniform sampler2D shadow;
+
 // outward attributes
 out vec4 out_Color;
 
@@ -74,6 +76,7 @@ in vec3 pass_Viewer;
 in vec3 pass_LightPosition[LIGHTS_SIZE];
 in vec3 pass_SpotDirection[LIGHTS_SIZE];
 in vec3 pass_SelfPosition;
+in vec4 pass_ShadowCoord;
 
 // Function Declarations
 vec3 lightTypes(int i, vec3 color, float dist, vec3 L, vec3 H);
@@ -91,6 +94,7 @@ void main() {
 	alphaMasking();
 	
 	out_Color = vec4(pow(lightColor.xyz, gamma), 1.0); // Make everything green
+	//out_Color = vec4(calcNormalMap(), 1.0);
 }
 
 vec3 lightTypes(int i, vec3 color, float dist, vec3 L, vec3 H) {
@@ -144,7 +148,15 @@ vec4 lighting() {
 	
 	float pi = 3.14;
 	
-	vec3 albedo = texture(material.albedo, pass_TexCoord0).xyz;
+	float visibility = 1.0;
+	
+	float bias = 0.005;
+	
+	if(texture2D(shadow, pass_ShadowCoord.xy / pass_ShadowCoord.w).x < pass_ShadowCoord.z - bias) {
+		visibility = 0.2;
+	}
+	
+	vec3 albedo = texture(material.albedo, pass_TexCoord0).xyz * visibility;
 	vec3 specularMap = texture(material.specular, pass_TexCoord0).xyz;
 	vec3 emissiveMap = texture(material.emissive, pass_TexCoord0).xyz;
 	

@@ -251,13 +251,24 @@ class Texture {
 
 public:
 
+	enum TextureFormatType {
+		RGB = 0,
+		RGBA,
+		DEPTH,
+		TFT_SIZE
+	};
+
 	Texture();
 
 	void init(std::string fn, bool mipmaps = true);
 
+	void init(int width, int height, TextureFormatType format);
+
 	void bind(int tt = GL_TEXTURE0);
 
 	void unbind();
+
+	GLuint getID();
 
 	void release();
 };
@@ -290,6 +301,43 @@ public:
 };
 
 /*
+	Framebuffer - This class wraps up the framebuffer.
+*/
+class Framebuffer {
+	GLuint id;
+
+	int width;
+	int height;
+
+public:
+
+	enum FrameBufferAttachType {
+		DEPTH = 0,
+		COLOR0,
+		COLOR1,
+		COLOR2,
+		COLOR3,
+		COLOR4,
+		COLOR5,
+		COLOR6,
+		COLOR7,
+		FBAT_SIZE
+	};
+
+	Framebuffer();
+
+	void create();
+
+	void bind();
+
+	void unbind();
+	
+	void attachTexture(FrameBufferAttachType type, Texture& t);
+
+	void release();
+};
+
+/*
 	Font
 
 	This is the font class.
@@ -299,9 +347,6 @@ class Font {
 	GLuint width, height;
 	GLuint vao;
 	GLuint vbo[2];
-
-	glm::vec2 position;
-	glm::vec2 size;
 
 	std::string str;
 
@@ -321,7 +366,21 @@ public:
 	int getWidth();
 
 	int getHeight();
+};
 
+/*
+	DrawSurface
+*/
+class DrawSurface {
+	GLuint vao;
+	GLuint vbo[2];
+public:
+
+	void init();
+
+	void render();
+
+	void release();
 };
 
 /*
@@ -432,6 +491,28 @@ public:
 };
 
 /*
+	Transform - This class is used for transforming 
+	objects. 
+*/
+class Transform {
+	glm::vec3 position;
+	glm::vec3 rotation;
+
+public:
+
+	void setPosition(glm::vec3 position);
+
+	glm::vec3 getPosition();
+
+	void setRotation(glm::vec3 rotation);
+
+	glm::vec3 getRotation();
+
+	void getModel(glm::mat4& m);
+
+};
+
+/*
 	This is the renderer for the game engine.
 
 	This pretty much wrapps the shader code for
@@ -480,7 +561,9 @@ public:
 	};
 
 private:
+
 	ShaderTypes shaderType;
+
 	Lights lights;
 
 	void createLight(int i);
@@ -509,6 +592,8 @@ public:
 	void setCamera(Camera& cam);
 
 	void setLight(Renderer::Lights lts, Light& l);
+
+	void setDepthMatrix(glm::mat4 depthvp);
 
 };
 
