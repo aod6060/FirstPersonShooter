@@ -64,8 +64,9 @@ class Game : public WindowCallback {
 	Texture testTex;
 
 	Shader depthShader;
-	Texture depthTexture;
-	Framebuffer depthFramebuffer;
+	Texture depthTexture[4];
+	glm::mat4 shadowMatrix[4];
+	Framebuffer depthFramebuffer[4];
 
 	float yrot;
 
@@ -77,10 +78,9 @@ class Game : public WindowCallback {
 
 	int test_index;
 
+	void renderShadow();
 
-	glm::mat4 renderShadow();
-
-	void renderScene(glm::mat4& depthvp);
+	void renderScene();
 
 	void renderUI();
 

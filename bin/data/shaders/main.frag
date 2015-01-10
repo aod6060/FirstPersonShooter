@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 // Defines
 #define LIGHTS_SIZE 8
+#define SHADOW_SIZE 4
 #define LIGHT_DIRECTION 0
 #define LIGHT_POINT 1
 #define LIGHT_SPOT 2
@@ -63,7 +64,7 @@ uniform Light lights[LIGHTS_SIZE];
 // Material System
 uniform Material material;
 
-uniform sampler2D shadow;
+uniform sampler2D shadow[SHADOW_SIZE];
 
 // outward attributes
 out vec4 out_Color;
@@ -76,7 +77,8 @@ in vec3 pass_Viewer;
 in vec3 pass_LightPosition[LIGHTS_SIZE];
 in vec3 pass_SpotDirection[LIGHTS_SIZE];
 in vec3 pass_SelfPosition;
-in vec4 pass_ShadowCoord;
+in vec4 pass_ShadowCoord[SHADOW_SIZE];
+in vec3 pass_posP;
 
 // Function Declarations
 vec3 lightTypes(int i, vec3 color, float dist, vec3 L, vec3 H);
@@ -92,6 +94,21 @@ void main() {
 	vec3 gamma = vec3(1.0 / 2.2);
 	
 	alphaMasking();
+	
+	/*
+	vec3 c;
+	
+	
+	if(pass_posP.z < 8.0) {
+		c = vec3(1.0, 0.0, 0.0);
+	} else if(pass_posP.z < 32.0 && pass_posP.z >= 8.0) {
+		c = vec3(0.0, 1.0, 0.0);
+	} else if(pass_posP.z < 128.0 && pass_posP.z >= 32.0) {
+		c = vec3(0.0, 0.0, 1.0);
+	} else if(pass_posP.z < 512.0 && pass_posP.z >= 128.0) {
+		c = vec3(1.0, 1.0, 0.0);
+	}
+	*/
 	
 	out_Color = vec4(pow(lightColor.xyz, gamma), 1.0); // Make everything green
 	//out_Color = vec4(calcNormalMap(), 1.0);
@@ -150,10 +167,30 @@ vec4 lighting() {
 	
 	float visibility = 1.0;
 	
-	float bias = 0.005;
+	float bias = 0.01;
 	
+	/*
 	if(texture2D(shadow, pass_ShadowCoord.xy / pass_ShadowCoord.w).x < pass_ShadowCoord.z - bias) {
-		visibility = 0.2;
+		visibility = 0.1;
+	}
+	*/
+	
+	if(pass_posP.z <= 8.0) {
+		if(texture2D(shadow[0], pass_ShadowCoord[0].xy / pass_ShadowCoord[0].w).x < pass_ShadowCoord[0].z - bias) {
+			visibility = 0.1;
+		}
+	} else if(pass_posP.z <= 32.0 && pass_posP.z > 8.0) {
+		if(texture2D(shadow[1], pass_ShadowCoord[1].xy / pass_ShadowCoord[1].w).x < pass_ShadowCoord[1].z - bias) {
+			visibility = 0.1;
+		}
+	} else if(pass_posP.z <= 128.0 && pass_posP.z > 32.0) {
+		if(texture2D(shadow[2], pass_ShadowCoord[2].xy / pass_ShadowCoord[2].w).x < pass_ShadowCoord[2].z - bias) {
+			visibility = 0.1;
+		}
+	} else if(pass_posP.z <= 512.0 && pass_posP.z > 128.0) {
+		if(texture2D(shadow[3], pass_ShadowCoord[3].xy / pass_ShadowCoord[3].w).x < pass_ShadowCoord[3].z - bias) {
+			visibility = 0.1;
+		}
 	}
 	
 	vec3 albedo = texture(material.albedo, pass_TexCoord0).xyz * visibility;

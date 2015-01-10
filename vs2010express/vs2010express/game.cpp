@@ -24,30 +24,18 @@ THE SOFTWARE.
 
 #include "game.h"
 
-glm::mat4 lookAt(glm::vec3 eye, glm::vec3 target, glm::vec3 up) {
-	glm::vec3 f = glm::normalize(target - eye);
-	glm::vec3 u = glm::normalize(up);
-	glm::vec3 s = glm::normalize(glm::cross(f, u));
+struct Sphere {
+	glm::vec3 center;
+	float radius;
+};
 
-	u = glm::cross(s, f);
-
-	glm::mat4 result;
-
-	result[0][0] = s.x;
-	result[1][0] = s.y;
-	result[2][0] = s.z;
-	result[0][1] = u.x;
-	result[1][1] = u.y;
-	result[2][1] = u.z;
-	result[0][2] = -f.x;
-	result[1][2] = -f.y;
-	result[2][2] = -f.z;
-	result[3][0] = -glm::dot(s, eye);
-	result[3][1] = -glm::dot(u, eye);
-	result[3][2] = glm::dot(f, eye);
-
-	return result;
-}
+struct Frustrum {
+	float neard;
+	float fard;
+	float fov;
+	float ration;
+	glm::vec3 point[8];
+};
 
 void Game::init() {
 
@@ -193,126 +181,190 @@ void Game::init() {
 	depthShader.createUniform("Projection");
 	depthShader.createUniform("View");
 	depthShader.createUniform("Model");
+	depthShader.createUniform("TextureMatrix");
+	glm::mat4 tm = glm::scale(glm::vec3(-1.0f, 1.0f, 1.0f)) * glm::rotate(glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	depthShader.setUniformMatrix4f("TextureMatrix", tm);
+	depthShader.createUniform("alphaMask");
+	depthShader.setUniform1i("alphaMask", 4);
 	depthShader.unbind();
 
-	depthTexture.init(1024, 1024, Texture::DEPTH);
 
-	depthFramebuffer.create();
+	for(int i = 0; i < 4; i++) {
+		depthTexture[i].init(1024, 1024, Texture::DEPTH);
 
-	depthFramebuffer.bind();
+		depthFramebuffer[i].create();
 
+		depthFramebuffer[i].bind();
+
+		depthTexture[i].bind();
+
+		depthFramebuffer[i].attachTexture(Framebuffer::DEPTH, depthTexture[i]);
+
+		depthTexture[i].unbind();
+
+		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			std::cout << "There something wrong with the frame buffer" << std::endl;
+		}
+
+		glDrawBuffer(GL_NONE);
+
+		depthFramebuffer[i].unbind();
+	}
+
+	/*
 	depthTexture.bind();
 
 	depthFramebuffer.attachTexture(Framebuffer::DEPTH, depthTexture);
 
 	depthTexture.unbind();
-
-	glDrawBuffer(GL_NONE);
-
-	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		std::cout << "There something wrong with the frame buffer" << std::endl;
-	}
-
-	depthFramebuffer.unbind();
+	*/
 }
 
-glm::mat4 Game::renderShadow() {
-	// Implement this in a minute
+void Game::renderShadow() {
 
-	float num = 128.0f;
-
-	glm::mat4 p = glm::ortho(-num, num, -num, num, -num, num * 2.0f);
-	glm::mat4 v = glm::translate(glm::vec3(cam.getPos().x, 0.0f, cam.getPos().z)) * glm::lookAt(
-		-light0.position,
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f));
-
-	glm::mat4 m;
-
-	depthFramebuffer.bind();
-	glViewport(0, 0, 1024, 1024);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	depthShader.bind();
-
-	depthShader.setUniformMatrix4f("Projection", p);
-	depthShader.setUniformMatrix4f("View", v);
-
-	m = glm::translate(glm::vec3(0.0f, 2.0f, -5.0f)) *
-				  glm::rotate(yrot, glm::vec3(1.0f, 1.0f, 1.0f));
+	float sp[] = {
+		8.0f,
+		32.0f,
+		128.0f,
+		256.0f
+	};
 
 
-	depthShader.setUniformMatrix4f("Model", m);
+	//depthFramebuffer.bind();
 
-	this->test.render();
+	for(int i = 0; i < 4; i++) {
 
-	m = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f));
+		depthFramebuffer[i].bind();
+		//depthFramebuffer.attachTexture(Framebuffer::DEPTH, depthTexture[i]);
 
-	depthShader.setUniformMatrix4f("Model", m);
+		glm::mat4 v = glm::lookAt(
+			cam.getPos(),
+			cam.getPos() + light0.position,
+			glm::vec3(0.0f, 1.0f, 0.0f));
 
-	this->terrain.render();
+		Sphere bs;
 
-	m = glm::translate(glm::vec3(0.0f, 0.0f, 5.0f));
+		bs.radius = sp[i];
 
-	depthShader.setUniformMatrix4f("Model", m);
+		glm::vec4 c = v * glm::vec4(cam.getPos(), 1.0);
 
-	this->player.render();
+		glm::vec3 center = glm::vec3(c.x, c.y, c.z);
 
-	m = glm::translate(glm::vec3(0.0f, 0.0f, 18.0f));
+		glm::vec3 min = center - glm::vec3(bs.radius);
+		glm::vec3 max = center + glm::vec3(bs.radius);
 
-	depthShader.setUniformMatrix4f("Model", m);
+		glm::mat4 p = glm::ortho(min.x, max.x, min.y, max.y, min.z, max.z*2);
 
-	this->sphere.render();
+		glm::mat4 m;
 
-	m = glm::translate(glm::vec3(18.0f, 0.0f, 18.0f));
+		glViewport(0, 0, 1024, 1024);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	depthShader.setUniformMatrix4f("Model", m);
+		depthShader.bind();
 
-	this->monkey.render();
+		depthShader.setUniformMatrix4f("Projection", p);
+		depthShader.setUniformMatrix4f("View", v);
 
-	glm::vec3 loc(0.0f, 30.0f, -20);
+		m = glm::translate(glm::vec3(0.0f, 2.0f, -5.0f)) *
+					  glm::rotate(yrot, glm::vec3(1.0f, 1.0f, 1.0f));
+
+
+		depthShader.setUniformMatrix4f("Model", m);
+
+		testMat.bind();
+		this->test.render();
+		testMat.unbind();
+
+		m = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f));
+
+		depthShader.setUniformMatrix4f("Model", m);
+
+		testMat2.bind();
+		this->terrain.render();
+		testMat2.unbind();
+
+		m = glm::translate(glm::vec3(0.0f, 0.0f, 5.0f));
+
+		depthShader.setUniformMatrix4f("Model", m);
+
+		playerMat.bind();
+		this->player.render();
+		playerMat.unbind();
+
+		m = glm::translate(glm::vec3(0.0f, 0.0f, 18.0f));
+
+		depthShader.setUniformMatrix4f("Model", m);
+
+		testMat3.bind();
+		this->sphere.render();
+		testMat3.bind();
+
+		m = glm::translate(glm::vec3(18.0f, 0.0f, 18.0f));
+
+		depthShader.setUniformMatrix4f("Model", m);
+
+		sand.bind();
+		this->monkey.render();
+		sand.unbind();
+
+		glm::vec3 loc(25.0f, 30.0f, -20);
 	
-	for(int i = 0; i < 10; i++) {
-		this->renderSphere(loc, depthShader);
-		loc.z += 5.0f;
+		silver.bind();
+		for(int i = 0; i < 10; i++) {
+			this->renderSphere(loc, depthShader);
+			loc.z += 5.0f;
+		}
+		silver.unbind();
+
+		loc.x = 30.0;
+		loc.z = -20.0;
+
+		gold.bind();
+		for(int i = 0; i < 10; i++) {
+			this->renderSphere(loc, depthShader);
+			loc.z += 5.0f;
+		}
+		gold.unbind();
+
+		loc.x = 20.0;
+		loc.z = -20.0;
+
+		copper.bind();
+
+		for(int i = 0; i < 10; i++) {
+			this->renderSphere(loc, depthShader);
+			loc.z += 5.0f;
+		}
+		copper.unbind();
+
+		m = glm::translate(glm::vec3(0.0f, 2.0f, 30.0f));
+
+		depthShader.setUniformMatrix4f("Model", m);
+
+		emTest.bind();
+		test.render();
+		emTest.unbind();
+
+		m = glm::translate(glm::vec3(8.0f, 1.0f, 30.0f));
+
+		depthShader.setUniformMatrix4f("Model", m);
+
+		alphaTest.bind();
+	
+		test.render();
+
+		alphaTest.unbind();
+
+		depthShader.unbind();
+		depthFramebuffer[i].unbind();
+
+		this->shadowMatrix[i] = p * v;
 	}
 
-	loc.x = 5.0;
-	loc.z = -20.0;
-
-	for(int i = 0; i < 10; i++) {
-		this->renderSphere(loc, depthShader);
-		loc.z += 5.0f;
-	}
-
-	loc.x = -5.0;
-	loc.z = -20.0;
-
-	for(int i = 0; i < 10; i++) {
-		this->renderSphere(loc, depthShader);
-		loc.z += 5.0f;
-	}
-
-	m = glm::translate(glm::vec3(0.0f, 2.0f, 30.0f));
-
-	depthShader.setUniformMatrix4f("Model", m);
-
-	test.render();
-
-	m = glm::translate(glm::vec3(4.0f, 2.0f, 30.0f));
-
-	depthShader.setUniformMatrix4f("Model", m);
-
-	test.render();
-
-	depthShader.unbind();
-
-	depthFramebuffer.unbind();
-
-	return p * v;
+	//depthFramebuffer.unbind();
 }
 
-void Game::renderScene(glm::mat4& depthvp) {
+void Game::renderScene() {
 	// Implement this now
 	Renderer* rend = Renderer::getInstance();
 
@@ -326,9 +378,19 @@ void Game::renderScene(glm::mat4& depthvp) {
 		0.0f, 0.0f, 0.5f, 0.0f,
 		0.5f, 0.5f, 0.5f, 1.0f
 	);
-	rend->setDepthMatrix(bias * depthvp);
 
-	depthTexture.bind(GL_TEXTURE5);
+	//rend->setDepthMatrix(bias * shadowMatrix[1]);
+
+	for(int i = 0; i < 4; i++) {
+		shadowMatrix[i] = bias * shadowMatrix[i];
+	}
+
+	rend->setDepthMatrices(shadowMatrix);
+
+	depthTexture[0].bind(GL_TEXTURE5);
+	depthTexture[1].bind(GL_TEXTURE6);
+	depthTexture[2].bind(GL_TEXTURE7);
+	depthTexture[3].bind(GL_TEXTURE8);
 
 	rend->setCamera(cam);
 
@@ -386,14 +448,14 @@ void Game::renderScene(glm::mat4& depthvp) {
 	this->monkey.render();
 	sand.unbind();
 
-	glm::vec3 loc(0.0f, 30.0f, -20);
+	glm::vec3 loc(25.0f, 30.0f, -20);
 	
 	for(int i = 0; i < 10; i++) {
 		this->renderSphere(loc, silver);
 		loc.z += 5.0f;
 	}
 
-	loc.x = 5.0;
+	loc.x = 30.0;
 	loc.z = -20.0;
 
 	for(int i = 0; i < 10; i++) {
@@ -401,7 +463,7 @@ void Game::renderScene(glm::mat4& depthvp) {
 		loc.z += 5.0f;
 	}
 
-	loc.x = -5.0;
+	loc.x = 20.0;
 	loc.z = -20.0;
 
 	for(int i = 0; i < 10; i++) {
@@ -418,7 +480,7 @@ void Game::renderScene(glm::mat4& depthvp) {
 	emTest.unbind();
 
 
-	m = glm::translate(glm::vec3(4.0f, 2.0f, 30.0f));
+	m = glm::translate(glm::vec3(8.0f, 1.0f, 30.0f));
 
 	rend->setModel(m);
 
@@ -426,7 +488,10 @@ void Game::renderScene(glm::mat4& depthvp) {
 	test.render();
 	alphaTest.unbind();
 
-	depthTexture.unbind();
+	depthTexture[3].unbind();
+	depthTexture[2].unbind();
+	depthTexture[1].unbind();
+	depthTexture[0].unbind();
 
 	rend->endShader(Renderer::SCENE);
 }
@@ -452,16 +517,49 @@ void Game::renderUI() {
 	font.renderString("Position: [%f, %f, %f]", cp.x, cp.y, cp.z);
 
 
-	m = glm::translate(glm::vec3(wm->getWidth() - 256.0f, 0.0f, 0.0f)) *
-		glm::scale(glm::vec3(256.0f, 256.0f, 0.0));
+	m = glm::translate(glm::vec3(wm->getWidth() - 128.0f, 0.0f, 0.0f)) *
+		glm::scale(glm::vec3(128.0f, 128.0f, 0.0));
 
 	rend->setModel(m);
 
-	depthTexture.bind();
+	depthTexture[0].bind();
 
 	ds.render();
 
-	depthTexture.unbind();
+	depthTexture[0].unbind();
+
+	m = glm::translate(glm::vec3(wm->getWidth() - 128.0f, 128.0f, 0.0f)) *
+		glm::scale(glm::vec3(128.0f, 128.0f, 0.0));
+
+	rend->setModel(m);
+
+	depthTexture[1].bind();
+
+	ds.render();
+
+	depthTexture[1].unbind();
+
+	m = glm::translate(glm::vec3(wm->getWidth() - 128.0f, 256.0f, 0.0f)) *
+		glm::scale(glm::vec3(128.0f, 128.0f, 0.0));
+
+	rend->setModel(m);
+
+	depthTexture[2].bind();
+
+	ds.render();
+
+	depthTexture[2].unbind();
+
+	m = glm::translate(glm::vec3(wm->getWidth() - 128.0f, 384.0f, 0.0f)) *
+		glm::scale(glm::vec3(128.0f, 128.0f, 0.0));
+
+	rend->setModel(m);
+
+	depthTexture[3].bind();
+
+	ds.render();
+
+	depthTexture[3].unbind();
 
 	rend->endShader(Renderer::UI);
 }
@@ -522,13 +620,15 @@ void Game::update() {
 
 	cam.update();
 
-	glm::mat4 depthvp = this->renderShadow();
+	//glm::mat4 depthvp = this->renderShadow();
+
+	this->renderShadow();
 
 	glViewport(0, 0, wm->getWidth(), wm->getHeight());
 	glClearColor(0.5, 0.6, 1.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	this->renderScene(depthvp);
+	this->renderScene();
 
 	this->renderUI();
 
@@ -536,8 +636,14 @@ void Game::update() {
 }
 
 void Game::release() {
-	depthFramebuffer.release();
-	depthTexture.release();
+	for(int i = 0; i < 4; i++) {
+		depthFramebuffer[i].release();
+	}
+
+	for(int i = 0; i < 4; i++) {
+		depthTexture[i].release();
+	}
+
 	depthShader.release();
 	testTex.release();
 	ds.release();

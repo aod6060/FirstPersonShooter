@@ -27,6 +27,7 @@ THE SOFTWARE.
 uniform mat4 Projection;
 uniform mat4 View;
 uniform mat4 Model;
+uniform mat4 TextureMatrix;
 
 // Attributes
 layout(location = 0) in vec3 in_Vertex;
@@ -34,6 +35,11 @@ layout(location = 1) in vec2 in_TexCoord0;
 layout(location = 2) in vec3 in_Normal;
 layout(location = 3) in vec3 in_Tangent;
 
+// pass values
+out vec2 pass_TexCoord0;
+
 void main() {
 	gl_Position = Projection * View * Model * vec4(in_Vertex, 1.0);
+	
+	pass_TexCoord0 = (TextureMatrix * vec4(in_TexCoord0, 1.0, 0.0)).xy;
 }

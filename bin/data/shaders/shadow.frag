@@ -23,5 +23,21 @@ THE SOFTWARE.
 */
 #version 330 core
 
+uniform sampler2D alphaMask;
+
+out float out_Depth;
+
+in vec2 pass_TexCoord0;
+
+void alphaMasking() {
+	vec4 am = texture(alphaMask, pass_TexCoord0);
+	
+	if(am.r == 0.0) {
+		discard;
+	}
+}
+
 void main() {
+	alphaMasking();
+	out_Depth = gl_FragCoord.z;
 }

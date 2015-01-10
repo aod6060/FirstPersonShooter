@@ -76,13 +76,43 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="game.cpp" />
-    <ClCompile Include="graphics.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="renderer\animatedmesh.cpp" />
+    <ClCompile Include="renderer\camera.cpp" />
+    <ClCompile Include="renderer\cubemap.cpp" />
+    <ClCompile Include="renderer\drawsurface.cpp" />
+    <ClCompile Include="renderer\font.cpp" />
+    <ClCompile Include="renderer\framebuffer.cpp" />
+    <ClCompile Include="renderer\material.cpp" />
+    <ClCompile Include="renderer\normal.cpp" />
+    <ClCompile Include="renderer\renderer.cpp" />
+    <ClCompile Include="renderer\shader.cpp" />
+    <ClCompile Include="renderer\staticmesh.cpp" />
+    <ClCompile Include="renderer\terrain.cpp" />
+    <ClCompile Include="renderer\texture.cpp" />
+    <ClCompile Include="renderer\transform.cpp" />
     <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game.h" />
     <ClInclude Include="graphics.h" />
+    <ClInclude Include="renderer\animatedmesh.h" />
+    <ClInclude Include="renderer\bitriangle.h" />
+    <ClInclude Include="renderer\camera.h" />
+    <ClInclude Include="renderer\cubemap.h" />
+    <ClInclude Include="renderer\drawsurface.h" />
+    <ClInclude Include="renderer\font.h" />
+    <ClInclude Include="renderer\framebuffer.h" />
+    <ClInclude Include="renderer\light.h" />
+    <ClInclude Include="renderer\material.h" />
+    <ClInclude Include="renderer\normal.h" />
+    <ClInclude Include="renderer\renderer.h" />
+    <ClInclude Include="renderer\shader.h" />
+    <ClInclude Include="renderer\staticmesh.h" />
+    <ClInclude Include="renderer\terrain.h" />
+    <ClInclude Include="renderer\texture.h" />
+    <ClInclude Include="renderer\transform.h" />
+    <ClInclude Include="renderer\triangle.h" />
     <ClInclude Include="system.h" />
     <ClInclude Include="window.h" />
   </ItemGroup>
