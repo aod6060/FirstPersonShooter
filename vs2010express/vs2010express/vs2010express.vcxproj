@@ -75,8 +75,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="entity.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="physics.cpp" />
+    <ClCompile Include="player.cpp" />
     <ClCompile Include="renderer\animatedmesh.cpp" />
     <ClCompile Include="renderer\camera.cpp" />
     <ClCompile Include="renderer\cubemap.cpp" />
@@ -94,8 +97,11 @@
     <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="entity.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="graphics.h" />
+    <ClInclude Include="physics.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="renderer\animatedmesh.h" />
     <ClInclude Include="renderer\bitriangle.h" />
     <ClInclude Include="renderer\camera.h" />

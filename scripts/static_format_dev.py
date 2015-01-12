@@ -25,18 +25,19 @@ THE SOFTWARE.
 import bpy
 
 bl_info = {
-    "name": "Static Mesh Format Development",
+    "name": "Static Mesh Format V8",
     "author": "Fred R. Cook",
     "blender": (2, 59, 0),
     "location": "File > Import-Export",
-    "description": "This is the developmental version of the static format for my first person opensource game.",
+    "description": "This is the official version of the static format for my first person opensource game.",
     "warning": "",
     "wiki_url": "",
     "tracker_url": "",
     "support": 'TESTING',
     "category": "Import-Export"}
     
-version = 2
+version = 8
+
 def write_some_data(context, filepath, use_some_setting):
     # Object
     obj = bpy.context.active_object
@@ -82,11 +83,17 @@ def write_some_data(context, filepath, use_some_setting):
     #write vertex section
     file.write("vertex\n")
     for v in vert:
-        file.write("%f %f %f\n"%(v.co[0], v.co[2], v.co[1]))
+        file.write("%f %f %f %f %f %f\n"%(v.co[0], v.co[2], v.co[1], v.normal[0], v.normal[2], v.normal[1]))
     file.write("end\n")
     #write normal section (note: vertex normals)
+    '''
     file.write("normal\n")
     for n in vert:
+        file.write("%f %f %f\n"%(n.normal[0], n.normal[2], n.normal[1]))
+    file.write("end\n")
+    '''
+    file.write("face-normal\n")
+    for n in poly:
         file.write("%f %f %f\n"%(n.normal[0], n.normal[2], n.normal[1]))
     file.write("end\n")
     #write texCoord section
@@ -104,6 +111,7 @@ def write_some_data(context, filepath, use_some_setting):
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.mesh.tris_convert_to_quads()
+    bpy.ops.object.mode_set(mode="OBJECT")
     
     return {'FINISHED'}
 
@@ -118,7 +126,7 @@ from bpy.types import Operator
 class ExportStaticMesh(Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
     bl_idname = "export_test.static_mesh_dev"  # important since its how bpy.ops.import_test.some_data is constructed
-    bl_label = "Export Shooter Static Mesh Development"
+    bl_label = "Export Shooter Static Mesh"
 
     # ExportHelper mixin class uses this
     filename_ext = ".smesh"
@@ -150,7 +158,7 @@ class ExportStaticMesh(Operator, ExportHelper):
 
 # Only needed if you want to add into a dynamic menu
 def menu_func_export(self, context):
-    self.layout.operator(ExportStaticMesh.bl_idname, text="Export Shooter Static Mesh Development")
+    self.layout.operator(ExportStaticMesh.bl_idname, text="Export Shooter Static Mesh")
 
 
 def register():

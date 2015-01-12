@@ -55,7 +55,7 @@ uniform mat4 View;
 uniform mat4 Model;
 uniform mat4 Normal;
 uniform mat4 TextureMatrix;
-uniform mat4 DepthBias[SHADOW_SIZE];
+//uniform mat4 DepthBias[SHADOW_SIZE];
 uniform vec3 CameraPosition;
 uniform vec3 SelfPosition;
 // Lighting
@@ -75,8 +75,6 @@ out vec3 pass_Viewer;
 out vec3 pass_LightPosition[LIGHTS_SIZE];
 out vec3 pass_SpotDirection[LIGHTS_SIZE];
 out vec3 pass_SelfPosition;
-out vec4 pass_ShadowCoord[SHADOW_SIZE];
-out vec3 pass_posP;
 
 // Function Declareations
 void setLight(int i, vec3 posW);
@@ -87,13 +85,9 @@ void main() {
 	// Project vertex to clip space
 	gl_Position = Projection * View * Model * vec4(in_Vertex, 1.0);
 	
-	pass_posP = gl_Position.xyz;
-	
 	pass_TexCoord0 = (TextureMatrix * vec4(in_TexCoord0, 1.0, 0.0)).xy;
 	
 	lighting();
-	
-	shadow();
 }
 
 
@@ -122,15 +116,5 @@ void lighting() {
 		if(lights[i].enabled == ENABLED) {
 			setLight(i, posW);
 		}
-	}
-}
-
-void shadow() {
-	/*
-	pass_ShadowCoord = DepthBias * Model * vec4(in_Vertex, 1.0);
-	*/
-	
-	for(int i = 0; i < SHADOW_SIZE; i++) {
-		pass_ShadowCoord[i] = DepthBias[i] * Model * vec4(in_Vertex, 1.0);
 	}
 }

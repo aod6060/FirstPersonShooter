@@ -45,7 +45,7 @@ class StaticMesh {
 		NONE = 0,
 		TRANSFORM,
 		VERTEX,
-		NORMAL,
+		FACE_NORMAL,
 		TEXCOORD,
 		FACE
 	};
@@ -54,7 +54,7 @@ public:
 
 	StaticMesh();
 
-	void init(std::string fn);
+	void init(std::string fn, bool facens = false);
 
 	void render();
 

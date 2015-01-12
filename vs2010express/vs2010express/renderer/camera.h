@@ -31,6 +31,9 @@ THE SOFTWARE.
 */
 
 class Camera {
+
+protected:
+
 	glm::vec3 pos;
 	glm::vec2 rot;
 

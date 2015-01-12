@@ -51,5 +51,7 @@ THE SOFTWARE.
 // the projects libraries
 #include "window.h"
 #include "graphics.h"
+#include "physics.h"
+#include "entity.h"
 
 #endif

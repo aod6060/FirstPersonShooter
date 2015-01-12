@@ -25,7 +25,7 @@ THE SOFTWARE.
 import bpy
 
 bl_info = {
-    "name": "Static Mesh Format V6",
+    "name": "Static Mesh Format V8",
     "author": "Fred R. Cook",
     "blender": (2, 59, 0),
     "location": "File > Import-Export",
@@ -36,7 +36,8 @@ bl_info = {
     "support": 'TESTING',
     "category": "Import-Export"}
     
-version = 6
+version = 8
+
 def write_some_data(context, filepath, use_some_setting):
     # Object
     obj = bpy.context.active_object
@@ -82,11 +83,17 @@ def write_some_data(context, filepath, use_some_setting):
     #write vertex section
     file.write("vertex\n")
     for v in vert:
-        file.write("%f %f %f\n"%(v.co[0], v.co[2], v.co[1]))
+        file.write("%f %f %f %f %f %f\n"%(v.co[0], v.co[2], v.co[1], v.normal[0], v.normal[2], v.normal[1]))
     file.write("end\n")
     #write normal section (note: vertex normals)
+    '''
     file.write("normal\n")
     for n in vert:
+        file.write("%f %f %f\n"%(n.normal[0], n.normal[2], n.normal[1]))
+    file.write("end\n")
+    '''
+    file.write("face-normal\n")
+    for n in poly:
         file.write("%f %f %f\n"%(n.normal[0], n.normal[2], n.normal[1]))
     file.write("end\n")
     #write texCoord section

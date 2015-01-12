@@ -27,58 +27,47 @@ THE SOFTWARE.
 #define GAME_H_
 
 #include "system.h"
-
+#include "player.h"
 
 class Game : public WindowCallback {
 	Font font;
 
 	Terrain terrain;
 
-	Camera cam;
+	//Camera cam;
 
-	StaticMesh test;
-	StaticMesh sphere;
-	StaticMesh player;
-	StaticMesh monkey;
+	Player player;
 
-	Material testMat;
+	StaticMesh enemyStaticMesh;
+	Material enemyMaterial;
+	Entity enemyEntity;
+
+	StaticMesh handGunStaticMesh;
+	Material handGunMaterial;
+	Entity handGunEntity;
+
+	StaticMesh handGunAmmoStaticMesh;
+	Material handGunAmmoMaterial;
+	Entity handGunAmmoEntity;
+
+	StaticMesh healthStaticMesh;
+	Material healthMaterial;
+	Entity healthEntity;
+
+	StaticMesh crateStaticMesh;
+	Material crateMaterial;
+	Entity crateEntity;
+
 	Material testMat2;
-	Material playerMat;
-	Material testMat3;
-	Material sand;
-	Material silver;
-	Material gold;
-	Material copper;
-	Material emTest;
-	Material alphaTest;
 
 	// Ligths
 	Light light0;
-	Light light1;
-	Light light2;
-	Light light3;
-	Light light4;
 
-	// DrawSurface
-	DrawSurface ds;
-	Texture testTex;
-
-	Shader depthShader;
-	Texture depthTexture[4];
-	glm::mat4 shadowMatrix[4];
-	Framebuffer depthFramebuffer[4];
-
-	float yrot;
-
-	void renderSphere(glm::vec3 location, Material& material);
-
-	void renderSphere(glm::vec3 location, Shader& shader);
-
-	void createMaterial(Material& m, glm::vec3 d, glm::vec3 s, glm::vec3 e, float ri, float r, float ec, float metal);
-
-	int test_index;
-
-	void renderShadow();
+	// Some physics stuff for testing
+	// Ground plane
+	btCollisionShape* groundShape;
+	btRigidBody* groundBody;
+	PhysicsInfo pinfo;
 
 	void renderScene();
 
