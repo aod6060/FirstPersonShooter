@@ -47,6 +47,7 @@ THE SOFTWARE.
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include <btBulletDynamicsCommon.h>
+#include <BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h>
 #include <GL/glew.h>
 // the projects libraries
 #include "window.h"

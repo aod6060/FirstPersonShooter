@@ -7,7 +7,7 @@ void Player::init(glm::vec3 pos, glm::vec2 rot) {
 
 	this->shape = new btCapsuleShape(1.0f, 2.0f);
 
-	btScalar mass = 1;
+	btScalar mass = 2;
 	btVector3 inertia(0, 0, 0);
 	shape->calculateLocalInertia(mass, inertia);
 	btDefaultMotionState* ms = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(pos.x, pos.y, pos.z)));
@@ -88,6 +88,10 @@ void Player::update() {
 		if(wm->keyPress(SDL_SCANCODE_D)) {
 			vel[0] += btCos(yrad) * speed;
 			vel[2] += btSin(yrad) * speed;
+		}
+
+		if(wm->keyPress(SDL_SCANCODE_SPACE)) {
+			vel[1] = 20.0f;
 		}
 
 		body->setLinearVelocity(vel);

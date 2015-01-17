@@ -53,45 +53,46 @@ void Game::init() {
 	testMat2.setSpecularFilename("data/texture/grass1_specular.png");
 	testMat2.init();
 
-	this->terrain.init("data/heightmap/heightmap1.png");
+	land.init("data/heightmap/heightmap1.png", 32.0f);
+	barrier.init(land.getWidth(), land.getHeight());
 
 	player.init(
-		glm::vec3(20.0f, 20.0f, -40.0f), 
+		glm::vec3(20.0f, land.getY(20, -40) + 2.0f, -40.0f), 
 		glm::vec2(0.0f, 180.0f));
 
 
 	enemyStaticMesh.init("data/mesh/enemy.smesh", true);
 	enemyMaterial.setAlbedoFilename("data/texture/enemy.png");
 	enemyMaterial.init();
-	enemyEntity.init(glm::vec3(0.0f, 20.0f, 0.0f));
+	enemyEntity.init(glm::vec3(0.0f, land.getY(0, 0), 0.0f), enemyStaticMesh);
 
 	handGunStaticMesh.init("data/mesh/hand_gun.smesh");
 	handGunMaterial.setAlbedoFilename("data/texture/hand_gun.png");
 	handGunMaterial.setNormalFilename("data/texture/hand_gun_normal.png");
 	handGunMaterial.setSpecularFilename("data/texture/hand_gun_specular.png");
 	handGunMaterial.init();
-	handGunEntity.init(glm::vec3(5.0f, 20.0f, 0.0f));
+	handGunEntity.init(glm::vec3(5.0f, land.getY(5, 0), 0.0f), handGunStaticMesh);
 
 	handGunAmmoStaticMesh.init("data/mesh/hand_gun_ammo.smesh");
 	handGunAmmoMaterial.setAlbedoFilename("data/texture/hand_gun_ammo.png");
 	handGunAmmoMaterial.setNormalFilename("data/texture/hand_gun_ammo_normal.png");
 	handGunAmmoMaterial.setSpecularFilename("data/texture/hand_gun_ammo_specular.png");
 	handGunAmmoMaterial.init();
-	handGunAmmoEntity.init(glm::vec3(10.0f, 20.0f, 0.0f));
+	handGunAmmoEntity.init(glm::vec3(10.0f, land.getY(10, 0) + 3.0, 0.0f), handGunAmmoStaticMesh);
 
 	healthStaticMesh.init("data/mesh/health.smesh");
 	healthMaterial.setAlbedoFilename("data/texture/health.png");
 	healthMaterial.setNormalFilename("data/texture/health_normal.png");
 	healthMaterial.setSpecularFilename("data/texture/health_specular.png");
 	healthMaterial.init();
-	healthEntity.init(glm::vec3(15.0f, 20.0f, 0.0f));
+	healthEntity.init(glm::vec3(15.0f, land.getY(15, 0), 0.0f), healthStaticMesh);
 
 	crateStaticMesh.init("data/mesh/crate.smesh", true);
 	crateMaterial.setAlbedoFilename("data/texture/crate.png");
 	crateMaterial.setNormalFilename("data/texture/crate_normal.png");
 	crateMaterial.setSpecularFilename("data/texture/crate_specular.png");
 	crateMaterial.init();
-	crateEntity.init(glm::vec3(20.0f, 20.0f, 0.0f));
+	crateEntity.init(glm::vec3(20.0f, land.getY(20, 0), 0.0f), crateStaticMesh);
 
 	light0.enabled = 1;
 	light0.type = Renderer::DIRECTION;
@@ -119,7 +120,7 @@ void Game::init() {
 
 	this->groundBody->setUserPointer(&pinfo);
 
-	PhysicsManager::getInstance()->getWorld()->addRigidBody(this->groundBody);
+	//PhysicsManager::getInstance()->getWorld()->addRigidBody(this->groundBody);
 }
 
 void Game::renderScene() {
@@ -136,12 +137,8 @@ void Game::renderScene() {
 
 	rend->setLight(Renderer::LIGHT0, this->light0);
 
-	m = glm::translate(glm::vec3(0.0f, 0.0f, 0.0f));
-
-	rend->setModel(m);
-
 	testMat2.bind();
-	this->terrain.render();
+	land.render();
 	testMat2.unbind();
 
 	enemyEntity.render(enemyStaticMesh, enemyMaterial);
@@ -237,7 +234,8 @@ void Game::release() {
 	enemyStaticMesh.release();
 	
 	player.release();
-	terrain.release();
+	barrier.release();
+	land.release();
 	font.release();
 	testMat2.release();
 	PhysicsManager::release();

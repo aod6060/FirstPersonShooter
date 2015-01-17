@@ -32,7 +32,7 @@ StaticMesh::StaticMesh() {
 
 void StaticMesh::init(std::string fn, bool facens) {
 	std::vector<glm::vec4> tran;
-	std::vector<glm::vec3> v;
+	//std::vector<glm::vec3> v;
 	std::vector<glm::vec3> n;
 	std::vector<glm::vec3> fnorm;
 	std::vector<glm::vec2> t;
@@ -97,7 +97,7 @@ void StaticMesh::init(std::string fn, bool facens) {
 			ss2 >> tt2.y;
 			ss2 >> tt2.z;
 
-			v.push_back(tt);
+			verticies.push_back(tt);
 			n.push_back(tt2);
 		} else if(sms == StaticMesh::FACE_NORMAL) {
 			glm::vec3 tt;
@@ -137,12 +137,12 @@ void StaticMesh::init(std::string fn, bool facens) {
 
 	glm::mat4 imat = glm::transpose(glm::inverse(mat));
 
-	for(int i = 0; i < v.size(); i++) {
-		glm::vec4 tv(v[i], 1.0);
+	for(int i = 0; i < verticies.size(); i++) {
+		glm::vec4 tv(verticies[i], 1.0);
 
 		tv = mat * tv;
 
-		v[i] = glm::vec3(tv.x, tv.y, tv.z);
+		verticies[i] = glm::vec3(tv.x, tv.y, tv.z);
 		
 
 		glm::vec4 tn(n[i], 0.0);
@@ -188,9 +188,9 @@ void StaticMesh::init(std::string fn, bool facens) {
 		}
 
 		for(int i = 0; i < bt.size(); i++) {
-			vlist.push_back(v[bt[i].t1.v1]);
-			vlist.push_back(v[bt[i].t1.v2]);
-			vlist.push_back(v[bt[i].t1.v3]);
+			vlist.push_back(verticies[bt[i].t1.v1]);
+			vlist.push_back(verticies[bt[i].t1.v2]);
+			vlist.push_back(verticies[bt[i].t1.v3]);
 			nlist.push_back(-fnorm[i]);
 			nlist.push_back(-fnorm[i]);
 			nlist.push_back(-fnorm[i]);
@@ -221,9 +221,9 @@ void StaticMesh::init(std::string fn, bool facens) {
 		}
 
 		for(int i = 0; i < bt.size(); i++) {
-			vlist.push_back(v[bt[i].t1.v1]);
-			vlist.push_back(v[bt[i].t1.v2]);
-			vlist.push_back(v[bt[i].t1.v3]);
+			vlist.push_back(verticies[bt[i].t1.v1]);
+			vlist.push_back(verticies[bt[i].t1.v2]);
+			vlist.push_back(verticies[bt[i].t1.v3]);
 			nlist.push_back(-n[bt[i].t1.v1]);
 			nlist.push_back(-n[bt[i].t1.v2]);
 			nlist.push_back(-n[bt[i].t1.v3]);
@@ -286,4 +286,10 @@ void StaticMesh::release() {
 
 int StaticMesh::getVersion() {
 	return this->version;
+}
+
+void StaticMesh::getVerticies(std::vector<glm::vec3>& v) {
+	for(int i = 0; i < verticies.size(); i++) {
+		v.push_back(verticies[i]);
+	}
 }

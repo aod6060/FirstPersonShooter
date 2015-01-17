@@ -1,45 +1,9 @@
-﻿Build started 1/12/2015 2:27:20 AM.
-     1>Project "C:\Users\Fred\Desktop\Games\Projects\github\FirstPersonShooter\vs2010express\vs2010express\vs2010express.vcxproj" on node 2 (build target(s)).
-     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\Microsoft.CppBuild.targets(299,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
-     1>InitializeBuildStatus:
-         Creating "Debug\vs2010express.unsuccessfulbuild" because "AlwaysCreate" was specified.
-       ClCompile:
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt game.cpp
-         game.cpp
-     1>c:\users\fred\desktop\games\projects\github\firstpersonshooter\vs2010express\vs2010express\game.cpp(198): warning C4305: 'argument' : truncation from 'double' to 'btScalar'
-     1>c:\users\fred\desktop\games\projects\github\firstpersonshooter\vs2010express\vs2010express\game.cpp(203): warning C4305: 'argument' : truncation from 'double' to 'GLclampf'
-       Link:
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"..\..\bin\run_d.exe" /NOLOGO SDL2main.lib SDL2.lib SDL2_image.lib SDL2_ttf.lib SDL2_mixer.lib opengl32.lib glu32.lib glew32.lib LinearMath_d.lib BulletCollision_d.lib BulletDynamics_d.lib BulletSoftBody_d.lib tinyxml2_d.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\run_d.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\Fred\Desktop\Games\Projects\github\FirstPersonShooter\bin\run_d.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"..\..\bin\run_d.lib" /MACHINE:X86 Debug\entity.obj
-         Debug\game.obj
-         Debug\main.obj
-         Debug\physics.obj
-         Debug\player.obj
-         Debug\animatedmesh.obj
-         Debug\camera.obj
-         Debug\cubemap.obj
-         Debug\drawsurface.obj
-         Debug\font.obj
-         Debug\framebuffer.obj
-         Debug\material.obj
-         Debug\normal.obj
-         Debug\renderer.obj
-         Debug\shader.obj
-         Debug\staticmesh.obj
-         Debug\terrain.obj
-         Debug\texture.obj
-         Debug\transform.obj
-         Debug\window.obj
-         LINK : ..\..\bin\run_d.exe not found or not built by the last incremental link; performing full link
-     1>LINK : warning LNK4098: defaultlib 'LIBCMTD' conflicts with use of other libs; use /NODEFAULTLIB:library
-     1>MSVCRTD.lib(cinitexe.obj) : warning LNK4098: defaultlib 'msvcrt.lib' conflicts with use of other libs; use /NODEFAULTLIB:library
-         vs2010express.vcxproj -> C:\Users\Fred\Desktop\Games\Projects\github\FirstPersonShooter\vs2010express\vs2010express\..\..\bin\run_d.exe
-       Manifest:
-         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"..\..\bin\run_d.exe;#1" /manifest Debug\run_d.exe.intermediate.manifest
-       FinalizeBuildStatus:
-         Deleting file "Debug\vs2010express.unsuccessfulbuild".
-         Touching "Debug\vs2010express.lastbuildstate".
-     1>Done Building Project "C:\Users\Fred\Desktop\Games\Projects\github\FirstPersonShooter\vs2010express\vs2010express\vs2010express.vcxproj" (build target(s)).
+﻿Build started 1/16/2015 10:29:58 PM.
+     1>Project "C:\Users\Fred\Desktop\Games\Projects\github\FirstPersonShooter\vs2010express\vs2010express\vs2010express.vcxproj" on node 2 (clean target(s)).
+     1>_PrepareForClean:
+         Deleting file "Debug\vs2010express.lastbuildstate".
+     1>Done Building Project "C:\Users\Fred\Desktop\Games\Projects\github\FirstPersonShooter\vs2010express\vs2010express\vs2010express.vcxproj" (clean target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:03.03
+Time Elapsed 00:00:00.10

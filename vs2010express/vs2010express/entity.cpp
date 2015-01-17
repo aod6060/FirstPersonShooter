@@ -51,6 +51,47 @@ void Entity::init(glm::vec3 pos) {
 	this->prePos = pos;
 }
 
+void Entity::init(glm::vec3 pos, StaticMesh& mesh) {
+	PhysicsManager* pm = PhysicsManager::getInstance();
+
+
+	//this->shape = new btBoxShape(btVector3(0.5, 0.5, 0.5));
+	this->shape = new btConvexHullShape();
+	
+	std::vector<glm::vec3> v;
+
+	mesh.getVerticies(v);
+
+	for(int i = 0; i < v.size(); i++) {
+		((btConvexHullShape*)shape)->addPoint(btVector3(
+			v[i].x,
+			v[i].y,
+			v[i].z));
+	}
+
+	btScalar mass = 1;
+	btVector3 inertia(0, 0, 0);
+	shape->calculateLocalInertia(mass, inertia);
+	btDefaultMotionState* ms = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1),btVector3(pos.x, pos.y, pos.z)));
+
+	btRigidBody::btRigidBodyConstructionInfo info(
+		mass,
+		ms,
+		this->shape,
+		inertia);
+
+	this->body = new btRigidBody(info);
+
+	this->info.theClass = this;
+	this->info.type = PT_ENTITY;
+
+	this->body->setUserPointer(&this->info);
+
+	pm->getWorld()->addRigidBody(body);
+
+	this->prePos = pos;
+}
+
 void Entity::render(StaticMesh& mesh, Material& material) {
 	glm::mat4 m;
 

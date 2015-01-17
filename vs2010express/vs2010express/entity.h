@@ -40,12 +40,13 @@ class Entity {
 public:
 	void init(glm::vec3 pos);
 
+	void init(glm::vec3 pos, StaticMesh& mesh);
+
 	void render(StaticMesh& mesh, Material& material);
 
 	void release();
 
 	void reset();
-
 };
 
 #endif

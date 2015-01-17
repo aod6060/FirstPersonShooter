@@ -30,6 +30,7 @@ enum PhysicsType {
 	PT_PLANE = 0,
 	PT_ENTITY,
 	PT_PLAYER,
+	PT_TERRAIN,
 	PT_SIZE
 };
 

@@ -40,6 +40,8 @@ class StaticMesh {
 	GLuint size;
 
 	int version;
+	
+	std::vector<glm::vec3> verticies;
 
 	enum StaticMeshSections {
 		NONE = 0,
@@ -61,6 +63,8 @@ public:
 	void release();
 
 	int getVersion();
+
+	void getVerticies(std::vector<glm::vec3>& v);
 
 };
 

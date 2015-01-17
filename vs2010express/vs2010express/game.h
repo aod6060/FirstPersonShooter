@@ -28,11 +28,14 @@ THE SOFTWARE.
 
 #include "system.h"
 #include "player.h"
+#include "land.h"
+#include "barrier.h"
 
 class Game : public WindowCallback {
 	Font font;
 
-	Terrain terrain;
+	Land land;
+	Barrier barrier;
 
 	//Camera cam;
 

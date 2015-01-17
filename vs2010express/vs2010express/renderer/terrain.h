@@ -43,15 +43,28 @@ class Terrain {
 
 	Uint32 count;
 
+
+	float heightFactor;
+
 public:
 
 	Terrain();
 
-	void init(std::string fn);
+	void init(std::string fn, float height);
 
 	void render();
 
 	void release();
+
+	void getHeights(std::vector<float>& hs);
+
+	float getY(int x, int y);
+
+	Uint32 getWidth();
+
+	Uint32 getHeight();
+
+	float getHeighFactor();
 };
 
 #endif

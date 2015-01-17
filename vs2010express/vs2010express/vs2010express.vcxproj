@@ -75,8 +75,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="barrier.cpp" />
     <ClCompile Include="entity.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="land.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="physics.cpp" />
     <ClCompile Include="player.cpp" />
@@ -97,9 +99,12 @@
     <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="barrier.h" />
+    <ClInclude Include="enemy.h" />
     <ClInclude Include="entity.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="graphics.h" />
+    <ClInclude Include="land.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="renderer\animatedmesh.h" />

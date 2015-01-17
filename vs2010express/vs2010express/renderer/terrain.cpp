@@ -29,9 +29,11 @@ Terrain::Terrain() {
 	this->height = 0;
 }
 
-void Terrain::init(std::string fn) {
+void Terrain::init(std::string fn, float hs) {
 	SDL_Surface* surf = 0;
 	surf = IMG_Load(fn.c_str());
+
+	this->heightFactor = hs;
 
 	if(surf == 0) {
 		std::cout << fn << ": doesn't load" << std::endl;
@@ -75,7 +77,7 @@ void Terrain::init(std::string fn) {
 			glm::vec2 tempt;
 
 			tempv.x = x - halfWidth;
-			tempv.y = (this->heights[y * this->width + x] / 255.0f) * 32.0f;
+			tempv.y = (this->heights[y * this->width + x] / 255.0f) * this->heightFactor;
 			tempv.z = y - halfHeight;
 
 			tempt.x = x * 0.5;
@@ -203,4 +205,38 @@ void Terrain::release() {
 	glDeleteBuffers(4, vbo);
 	glDeleteVertexArrays(1, &this->vao);
 	heights.clear();
+}
+
+void Terrain::getHeights(std::vector<float>& hs) {
+	hs.resize(this->width * this->height);
+
+	for(int i = 0; i < heights.size(); i++) {
+		hs[i] = (heights[i] / 255.0f) * this->heightFactor;
+	}
+}
+
+float Terrain::getY(int x, int y) {
+	float _y = 0.0f;
+
+	x += this->width / 2;
+	y += this->height / 2;
+
+
+	//std::cout << x << ", " << y << std::endl;
+
+	_y = (heights[y * this->width + x] / 255.0f) * this->heightFactor;
+
+	return _y;
+}
+
+Uint32 Terrain::getWidth() {
+	return this->width;
+}
+
+Uint32 Terrain::getHeight() {
+	return this->height;
+}
+
+float Terrain::getHeighFactor() {
+	return this->heightFactor;
 }
